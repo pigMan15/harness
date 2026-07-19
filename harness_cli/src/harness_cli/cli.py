@@ -19,6 +19,7 @@ from harness_cli.commands.list_runs import list_runs_cmd
 from harness_cli.commands.gates_cmd import gates
 from harness_cli.commands.save_run import save
 from harness_cli.commands.projects_cmd import register, unregister, projects
+from harness_cli.commands.knowledge_cmd import knowledge_app
 
 app = typer.Typer(
     name="bridle",
@@ -55,6 +56,7 @@ app.command(name="save")(save)
 app.command(name="register")(register)
 app.command(name="unregister")(unregister)
 app.command(name="projects")(projects)
+app.add_typer(knowledge_app, name="knowledge")
 
 
 def main() -> None:

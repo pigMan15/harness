@@ -21,6 +21,7 @@
 
 ## 边界
 
+- 所有产物中的描述性文字必须使用中文，包括 residual_risks、waivers、command name 和 result 字段。
 - 除非被重新指定为 developer，否则不实现修复。
 - 不隐藏失败命令。
 - 不绕过 `failure_recovery` 自行选择回退节点。

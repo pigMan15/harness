@@ -76,6 +76,9 @@ app.command(name="register")(register)
 app.command(name="unregister")(unregister)
 app.command(name="projects")(projects)
 
+from .commands.knowledge_cmd import knowledge_app
+app.add_typer(knowledge_app, name="knowledge")
+
 
 def main() -> None:
     """入口函数（PyInstaller 打包用）。"""

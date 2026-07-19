@@ -16,6 +16,13 @@ RUNS_DIR = ".harness/runs"
 AGENTS_FILE = "AGENTS.md"
 CLAUDE_FILE = "CLAUDE.md"
 
+# ---- 知识库 ----
+KNOWLEDGE_DIR = ".harness/knowledge"
+KNOWLEDGE_SYNC_FILE = ".harness/knowledge/SYNC.yaml"
+KNOWLEDGE_INDEX_FILE = ".harness/knowledge/index.md"
+KNOWLEDGE_DOMAINS = ["architecture", "domain", "engineering", "operations", "runway", "private"]
+KNOWLEDGE_PROMOTION_ARTIFACT = "19-knowledge-promotion.md"
+
 # ---- 色板：映射到 Rich/Textual 终端 256 色 ----
 # 主色 #7C3AED purple  辅助色 #06B6D4 cyan
 # 成功 #22C55E green   警告 #EAB308 yellow
