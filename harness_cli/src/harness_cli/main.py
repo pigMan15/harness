@@ -28,8 +28,13 @@ app = typer.Typer(
 def callback(
     ctx: typer.Context,
     version: bool = typer.Option(False, "--version", "-V", help="Show version and exit"),
+    lang: str = typer.Option("", "--lang", "-L", help="Language: en, zh (auto-detect if not set)"),
 ) -> None:
     """无子命令时启动 TUI，--version 显示版本。"""
+    if lang:
+        from .core.i18n import set_lang
+        set_lang(lang)
+
     if version:
         print_version(__version__)
         return
@@ -65,6 +70,11 @@ app.command(name="gates")(gates)
 
 from .commands.save_run import save
 app.command(name="save")(save)
+
+from .commands.projects_cmd import register, unregister, projects
+app.command(name="register")(register)
+app.command(name="unregister")(unregister)
+app.command(name="projects")(projects)
 
 
 def main() -> None:

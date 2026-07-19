@@ -22,7 +22,7 @@
     "run_id": { "type": "string" },
     "status": {
       "type": "string",
-      "enum": ["IDLE", "ROUTING", "REVIEWING", "DESIGNING", "PLANNING", "DEVELOPING", "VERIFYING", "DEPLOYING", "TESTING", "REPORTING", "BLOCKED", "DONE"]
+      "enum": ["IDLE", "ROUTING", "IN_PROGRESS", "REVIEWING", "DESIGNING", "PLANNING", "DEVELOPING", "VERIFYING", "DEPLOYING", "TESTING", "REPORTING", "BLOCKED", "DONE"]
     },
     "intent": {
       "type": "string",

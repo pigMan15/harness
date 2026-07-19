@@ -22,6 +22,7 @@ class RunStatus(str, Enum):
     """Run 生命周期状态。"""
     IDLE = "IDLE"
     ROUTING = "ROUTING"
+    IN_PROGRESS = "IN_PROGRESS"
     REVIEWING = "REVIEWING"
     DESIGNING = "DESIGNING"
     PLANNING = "PLANNING"
@@ -32,6 +33,9 @@ class RunStatus(str, Enum):
     REPORTING = "REPORTING"
     BLOCKED = "BLOCKED"
     DONE = "DONE"
+    COMPLETED = "COMPLETED"
+    ACTIVE = "ACTIVE"
+    PAUSED = "PAUSED"
 
 
 class Intent(str, Enum):
@@ -117,7 +121,7 @@ class HarnessState:
             intent=Intent(raw["intent"]),
             risk=Risk(raw["risk"]),
             current_node=raw["current_node"],
-            next_role=raw["next_role"],
+            next_role=raw.get("next_role") or "",
             phase_dir=raw["phase_dir"],
             required_nodes=raw.get("required_nodes", []),
             completed_nodes=raw.get("completed_nodes", []),
@@ -317,7 +321,7 @@ def switch_run(run_id: str, root: str = ".") -> HarnessState:
         intent=Intent(raw["intent"]),
         risk=Risk(raw["risk"]),
         current_node=raw["current_node"],
-        next_role=raw["next_role"],
+        next_role=raw.get("next_role") or "",
         phase_dir=raw["phase_dir"],
         required_nodes=raw.get("required_nodes", []),
         completed_nodes=raw.get("completed_nodes", []),

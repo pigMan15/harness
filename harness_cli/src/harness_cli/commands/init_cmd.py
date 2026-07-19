@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from ..core.i18n import _
 from ..constants import (
     HARNESS_DIR, HARNESS_ENTRY_MARKER_START, HARNESS_ENTRY_MARKER_END,
     HARNESS_ENTRY_BLOCK, AGENTS_FILE, CLAUDE_FILE, THEME,
@@ -125,25 +126,25 @@ def init(
             # repair 模式：只补全缺失文件
             created = _copy_templates(root, dry_run=dry_run)
             if dry_run:
-                console.print("[bold]Would add missing files:[/]")
+                console.print(f"[bold]{_('init.dry_would_add')}[/]")
                 for f in created:
                     console.print(f"  + {f}")
                 return
             if created:
-                console.print(f"[green]Added {len(created)} missing template file(s):[/]")
+                console.print(f"[green]{_('init.added_files', n=len(created))}[/]")
                 for f in created:
                     console.print(f"  + {f}")
             else:
-                console.print("[dim]All template files present. Nothing to repair.[/]")
+                console.print(f"[dim]{_('init.all_present')}[/]")
         else:
             # 已有 .harness/，只做健康检查
             console.print(Panel(
                 Text.assemble(
-                    (".harness/ already exists\n", "dim"),
-                    ("Run 'bridle validate' to check structure health.\n", ""),
-                    ("Use 'bridle init --repair' to fill missing files.", ""),
+                    (f"{_('init.already_exists')}\n", "dim"),
+                    (f"{_('init.already_exists_hint')}\n", ""),
+                    (_("init.already_exists_repair"), ""),
                 ),
-                title="Harness Status",
+                title=_("init.already_exists_title"),
                 border_style=THEME["secondary"],
             ))
 
@@ -161,17 +162,17 @@ def init(
 
     if agents_exists:
         if force or not _has_harness_entry(root / AGENTS_FILE):
-            actions.append(f"Append harness entry to {AGENTS_FILE}")
+            actions.append(_("init.append_agents"))
     else:
-        actions.append(f"Create {AGENTS_FILE}")
+        actions.append(_("init.create_agents"))
 
     if claude_exists:
         if force or not _has_harness_entry(root / CLAUDE_FILE):
-            actions.append(f"Append harness entry to {CLAUDE_FILE}")
+            actions.append(_("init.append_claude"))
     else:
-        actions.append(f"Create {CLAUDE_FILE}")
+        actions.append(_("init.create_claude"))
 
-    actions.append(f"Create .harness/ (full template)")
+    actions.append(_("init.create_harness"))
 
     # 预览
     console.print(Panel(
@@ -181,7 +182,7 @@ def init(
             ("Will:\n", "bold"),
             *[(f"  - {a}\n", "") for a in actions],
         ),
-        title="Harness Init",
+        title=_("init.title"),
         border_style=THEME["primary"],
     ))
 
@@ -190,43 +191,50 @@ def init(
 
     # 确认
     if not force:
-        answer = typer.confirm("Proceed?", default=True)
+        answer = typer.confirm(_("init.proceed"), default=True)
         if not answer:
-            console.print("[dim]Cancelled.[/]")
+            console.print(f"[dim]{_('init.cancelled')}[/]")
             return
 
     # 执行
     # 1. 处理 AGENTS.md
     if force and agents_exists:
         _replace_harness_entry(root / AGENTS_FILE)
-        print_success(f"Updated harness entry in {AGENTS_FILE}")
+        print_success(_("init.updated", file=AGENTS_FILE))
     elif agents_exists:
         if _append_harness_entry(root / AGENTS_FILE):
-            print_success(f"Appended harness entry to {AGENTS_FILE}")
+            print_success(_("init.appended", file=AGENTS_FILE))
         else:
-            print_info(f"{AGENTS_FILE} already has harness entry - skipped")
+            print_info(_("init.already_has", file=AGENTS_FILE))
     else:
         (root / AGENTS_FILE).write_text(HARNESS_ENTRY_BLOCK + "\n", encoding="utf-8")
-        print_success(f"Created {AGENTS_FILE}")
+        print_success(_("init.created", file=AGENTS_FILE))
 
     # 2. 处理 CLAUDE.md
     if force and claude_exists:
         _replace_harness_entry(root / CLAUDE_FILE)
-        print_success(f"Updated harness entry in {CLAUDE_FILE}")
+        print_success(_("init.updated", file=CLAUDE_FILE))
     elif claude_exists:
         if _append_harness_entry(root / CLAUDE_FILE):
-            print_success(f"Appended harness entry to {CLAUDE_FILE}")
+            print_success(_("init.appended", file=CLAUDE_FILE))
         else:
-            print_info(f"{CLAUDE_FILE} already has harness entry - skipped")
+            print_info(_("init.already_has", file=CLAUDE_FILE))
     else:
         (root / CLAUDE_FILE).write_text(HARNESS_ENTRY_BLOCK + "\n", encoding="utf-8")
-        print_success(f"Created {CLAUDE_FILE}")
+        print_success(_("init.created", file=CLAUDE_FILE))
 
     # 3. 复制模板
     created = _copy_templates(root)
-    print_success(f"Created .harness/ ({len(created)} files)")
+    print_success(_("init.files_created", n=len(created)))
 
-    # 4. 最终校验
+    # 4. 自动注册到全局列表
+    try:
+        from .projects_cmd import _register_project
+        _register_project(str(root), silent=True)
+    except Exception:
+        pass  # 注册失败不阻断 init
+
+    # 5. 最终校验
     if not no_validate:
         console.print()
         v = Validator(str(root))
@@ -234,6 +242,6 @@ def init(
         print_validation(report)
 
     console.print()
-    console.print("[bold]Next steps:[/]")
-    console.print(f"  1. Edit .harness/rules/build.md to set your build/test commands")
-    console.print(f"  2. Run 'bridle new <id> --intent FEATURE --risk MEDIUM' to start your first run")
+    console.print(f"[bold]{_('init.next_steps')}[/]")
+    console.print(f"  1. {_('init.step_build')}")
+    console.print(f"  2. {_('init.step_new')}")

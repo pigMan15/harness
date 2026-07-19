@@ -6,6 +6,7 @@ from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Static, ProgressBar
 
+from ...core.i18n import node_name
 from ...core.state import HarnessState
 from ...core.workflow import Workflow
 from ...constants import THEME
@@ -51,7 +52,8 @@ class WorkflowPanel(Static):
 
             artifact = workflow.artifact_for(node_id) or ""
             role = workflow.role_for(node_id)
-            line = f"  {icon} {node_id:<24}  {artifact:<20}  ({role})"
+            name = node_name(node_id)
+            line = f"  {icon} {name:<16}  {artifact:<20}  ({role})"
             lines.append(line)
 
         nodes_text.update("\n".join(lines))

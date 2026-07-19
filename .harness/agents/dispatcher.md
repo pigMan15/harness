@@ -10,8 +10,8 @@
 
 ## 职责
 
-1. 如果缺失，判断 intent 和 risk。
-2. 从 `workflow.yaml` 选择必需路径。
+1. 如果缺失，判断 intent 和 risk。**如果 state.json 中已有 intent 和 risk，禁止修改——那是用户在 bridle new 时明确指定的。即使你认为当前任务更适合其他类型，也不得覆盖。**
+2. 从 `workflow.yaml` 选择必需路径。如果 `required_nodes` 已存在且与当前 intent/risk 匹配，禁止重新路由。
 3. 找到第一个尚未完成的必需节点。
 4. 设置 `current_node`、`next_role` 和 `status`。
 5. 用一句简短指令说明下一步。

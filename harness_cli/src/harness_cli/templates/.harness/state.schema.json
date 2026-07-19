@@ -20,10 +20,7 @@
   "properties": {
     "schema_version": { "type": "string" },
     "run_id": { "type": "string" },
-    "status": {
-      "type": "string",
-      "enum": ["IDLE", "ROUTING", "REVIEWING", "DESIGNING", "PLANNING", "DEVELOPING", "VERIFYING", "DEPLOYING", "TESTING", "REPORTING", "BLOCKED", "DONE"]
-    },
+    "status": { "type": "string" },
     "intent": {
       "type": "string",
       "enum": ["UNKNOWN", "QUERY", "BUG_FIX", "FEATURE", "REFACTOR", "DEPLOYMENT", "INCIDENT"]
@@ -33,7 +30,7 @@
       "enum": ["UNKNOWN", "NA", "LOW", "MEDIUM", "HIGH"]
     },
     "current_node": { "type": "string" },
-    "next_role": { "type": "string" },
+    "next_role": { "type": ["string", "null"] },
     "phase_dir": { "type": "string" },
     "required_nodes": { "type": "array", "items": { "type": "string" } },
     "completed_nodes": { "type": "array", "items": { "type": "string" } },

@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.text import Text
 
 from ..constants import THEME, BANNER
+from ..core.i18n import node_name
 from ..core.state import HarnessState
 from ..core.workflow import Workflow
 from ..core.gates import GateResult
@@ -83,9 +84,10 @@ def print_status(state: HarnessState, workflow: Workflow) -> None:
         artifact = workflow.artifact_for(node_id) or ""
         role = workflow.role_for(node_id)
 
+        name = node_name(node_id)
         line = Text.assemble(
             "  ", (icon, style), " ",
-            (f"{node_id:<28}", ""),
+            (f"{name:<20}", ""),
             (f"{artifact:<24}", "dim"),
             (f"<- {role}", "dim italic"),
         )
