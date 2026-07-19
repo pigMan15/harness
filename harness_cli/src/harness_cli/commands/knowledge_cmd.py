@@ -153,6 +153,7 @@ def knowledge_init(
 @knowledge_app.command(name="remote")
 def knowledge_remote(
     url: str = typer.Argument("", help="Remote git URL for shared knowledge"),
+    branch: str = typer.Option("", "--branch", "-b", help="Remote branch (default: main)"),
 ) -> None:
     """Set or view the shared knowledge remote URL."""
     root = Path.cwd()
@@ -161,6 +162,7 @@ def knowledge_remote(
     if not url:
         if cfg.remote_url:
             console.print(f"[bold]{_('knowledge.remote_current', url=cfg.remote_url)}[/]")
+            console.print(f"  Branch: {cfg.branch}")
         else:
             console.print(f"[dim]{_('knowledge.remote_none')}[/]")
         return
@@ -172,8 +174,11 @@ def knowledge_remote(
         raise typer.Exit(1)
 
     cfg.remote_url = url
+    if branch:
+        cfg.branch = branch
     cfg.save(str(root))
     print_success(_("knowledge.remote_set", url=url))
+    console.print(f"[dim]Branch: {cfg.branch}[/]")
 
 
 # ──────────────────────────────────────────────
@@ -313,8 +318,9 @@ def knowledge_extract(
 @knowledge_app.command(name="review")
 def knowledge_review(
     run_id: str = typer.Argument(..., help="Run ID to review promotion draft for"),
+    entry_index: int = typer.Option(0, "--entry", "-e", help="Preview single entry by index (1-based)"),
 ) -> None:
-    """Review candidate knowledge entries from a run's promotion draft."""
+    """Review candidate knowledge entries. Use --entry N to preview a single entry."""
     root = Path.cwd()
     draft_path = root / ".harness/phases" / run_id / KNOWLEDGE_PROMOTION_ARTIFACT
 
@@ -323,7 +329,50 @@ def knowledge_review(
         raise typer.Exit(1)
 
     content = draft_path.read_text(encoding="utf-8")
-    console.print(Panel(content, title=_("knowledge.review_title")))
+
+    if entry_index > 0:
+        # 只预览一条
+        entries = _parse_candidate_entries(content, run_id)
+        matching = [e for e in entries if e.get("index") == entry_index]
+        if not matching:
+            print_error(f"Entry #{entry_index} not found. Available: 1-{len(entries)}")
+            raise typer.Exit(1)
+        e = matching[0]
+        text = (
+            f"### [{e.get('index')}] {e.get('type_zh', e['type'])} | {e.get('domain_zh', e['domain'])} | 优先级 {e['priority']}\n\n"
+            f"**标题**: {e['title']}\n\n"
+            f"{e.get('description', '无描述')}"
+        )
+        console.print(Panel(text, title=f"{_('knowledge.review_title')} #{entry_index}"))
+    else:
+        console.print(Panel(content, title=_("knowledge.review_title")))
+
+
+def _parse_candidate_entries(content: str, run_id: str) -> list[dict]:
+    """解析 promotion draft 中的候选条目表。"""
+    entries: list[dict] = []
+    idx = 0
+    for line in content.splitlines():
+        line = line.strip()
+        if not line.startswith("| ") or line.startswith("| 类型") or line.startswith("| ---"):
+            continue
+        cols = [c.strip() for c in line.strip("|").split("|")]
+        if len(cols) < 5:
+            continue
+        idx += 1
+        desc = cols[5] if len(cols) >= 6 else cols[1]
+        entries.append({
+            "index": idx,
+            "type": cols[0],
+            "type_zh": _TYPE_ZH.get(cols[0], cols[0]),
+            "title": cols[1],
+            "priority": cols[2],
+            "domain": cols[3],
+            "domain_zh": _DOMAIN_ZH.get(cols[3], cols[3]),
+            "confidence": cols[4],
+            "description": desc,
+        })
+    return entries
 
 
 # ──────────────────────────────────────────────
@@ -333,9 +382,9 @@ def knowledge_review(
 def knowledge_accept(
     run_id: str = typer.Argument(..., help="Run ID whose promotion draft to accept"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview only, don't write"),
-    entry_id: Optional[str] = typer.Option(None, "--entry", "-e", help="Accept a single entry by id"),
+    entry_index: int = typer.Option(0, "--entry", "-e", help="Accept a single entry by index (1-based)"),
 ) -> None:
-    """Accept and write promotion draft entries to the knowledge base."""
+    """Accept and write promotion draft entries. Use --entry N to accept a single one."""
     root = Path.cwd()
     draft_path = root / ".harness/phases" / run_id / KNOWLEDGE_PROMOTION_ARTIFACT
 
@@ -345,33 +394,29 @@ def knowledge_accept(
 
     index = KnowledgeIndex.load(str(root))
 
-    # 解析草稿中的候选条目
     content = draft_path.read_text(encoding="utf-8")
+    candidates = _parse_candidate_entries(content, run_id)
+
     entries: list[KnowledgeEntry] = []
-    for line in content.splitlines():
-        line = line.strip()
-        if not line.startswith("| ") or line.startswith("| 类型") or line.startswith("| ---"):
+    for c in candidates:
+        if entry_index > 0 and c["index"] != entry_index:
             continue
-        cols = [c.strip() for c in line.strip("|").split("|")]
-        if len(cols) < 5:
-            continue
+        type_en = next((k for k, v in _TYPE_ZH.items() if v == c["type"]), c["type"])
+        domain_en = next((k for k, v in _DOMAIN_ZH.items() if v == c["domain"]), c["domain"])
+        # domain might already be English
+        if domain_en not in (d.value for d in KnowledgeDomain):
+            domain_en = next((k for k, v in _DOMAIN_ZH.items() if v == c["domain"]), "engineering")
+        eid = f"{type_en}-{run_id}-{re.sub(r'[^a-z0-9一-鿿]+', '-', c['title'][:40].lower()).strip('-')}"
 
-        # 把中文标题转回英文 key 作为 id 前缀
-        type_en = next((k for k, v in _TYPE_ZH.items() if v == cols[0]), cols[0])
-        domain_en = next((k for k, v in _DOMAIN_ZH.items() if v == cols[3]), cols[3])
-        eid = f"{type_en}-{run_id}-{re.sub(r'[^a-z0-9一-鿿]+', '-', cols[1][:40].lower()).strip('-')}"
-        if entry_id and eid != entry_id:
-            continue
-
-        body_text = cols[5] if len(cols) >= 6 else cols[1]
+        body_text = c.get("description", c["title"])
         entry = KnowledgeEntry(
             id=eid,
-            title=cols[1][:120],
+            title=c["title"][:120],
             type=type_en,
-            priority=KnowledgePriority(cols[2]) if cols[2] in ("P0", "P1", "P2") else KnowledgePriority.P2,
+            priority=KnowledgePriority(c["priority"]) if c["priority"] in ("P0", "P1", "P2") else KnowledgePriority.P2,
             domain=KnowledgeDomain(domain_en) if domain_en in (d.value for d in KnowledgeDomain) else KnowledgeDomain.ENGINEERING,
             source_run=run_id,
-            confidence=float(cols[4]) if len(cols) > 4 else 0.5,
+            confidence=float(c["confidence"]) if c.get("confidence") else 0.5,
             body=body_text,
         )
         entries.append(entry)

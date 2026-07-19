@@ -163,6 +163,7 @@ class KnowledgeConfig:
     """管理 .harness/knowledge/SYNC.yaml 配置。"""
 
     remote_url: str = ""
+    branch: str = "main"
     auto_pull: bool = True
     last_pull: Optional[str] = None
     last_push: Optional[str] = None
@@ -178,6 +179,7 @@ class KnowledgeConfig:
             data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
             return cls(
                 remote_url=str(data.get("remote_url", "")),
+                branch=str(data.get("branch", "main")),
                 auto_pull=bool(data.get("auto_pull", True)),
                 last_pull=data.get("last_pull"),
                 last_push=data.get("last_push"),
@@ -192,6 +194,7 @@ class KnowledgeConfig:
         path.parent.mkdir(parents=True, exist_ok=True)
         data = {
             "remote_url": self.remote_url,
+            "branch": self.branch,
             "auto_pull": self.auto_pull,
             "last_pull": self.last_pull,
             "last_push": self.last_push,
@@ -310,7 +313,7 @@ class SyncManager:
         """确保 knowledge-git 是一个 git 仓库。"""
         if not self._git_dir.exists():
             self.knowledge_dir.mkdir(parents=True, exist_ok=True)
-            returncode, stdout, stderr = self._run_git("init", "-b", "main")
+            returncode, stdout, stderr = self._run_git("init", "-b", self.config.branch)
             if returncode != 0:
                 returncode, stdout, stderr = self._run_git("init")
                 if returncode != 0:
@@ -345,13 +348,13 @@ class SyncManager:
                 return False, f"Cannot reach remote. Check your network and the URL."
             return False, f"git fetch failed: {err}"
 
-        # 尝试 checkout remote main
-        returncode, stdout, stderr = self._run_git("checkout", "-b", "main", "origin/main")
+        # 尝试 checkout remote 分支
+        remote_branch = f"origin/{self.config.branch}"
+        returncode, stdout, stderr = self._run_git("checkout", "-b", self.config.branch, remote_branch)
         if returncode != 0:
-            # 或许已有 main 分支，尝试 reset
-            returncode, stdout, stderr = self._run_git("checkout", "main")
+            returncode, stdout, stderr = self._run_git("checkout", self.config.branch)
             if returncode == 0:
-                self._run_git("merge", "origin/main", "--allow-unrelated-histories")
+                self._run_git("merge", remote_branch, "--allow-unrelated-histories")
 
         now = datetime.now(timezone.utc).isoformat()
         self.config.last_pull = now
@@ -367,10 +370,10 @@ class SyncManager:
         if not ok:
             return False, msg
 
-        # 确保在 main 分支
-        returncode, stdout, stderr = self._run_git("checkout", "main")
+        # 确保在目标分支
+        returncode, stdout, stderr = self._run_git("checkout", self.config.branch)
         if returncode != 0:
-            self._run_git("checkout", "-b", "main")
+            self._run_git("checkout", "-b", self.config.branch)
 
         # git add all
         returncode, stdout, stderr = self._run_git("add", "-A")
@@ -384,12 +387,12 @@ class SyncManager:
             return False, f"git commit failed: {stderr}"
 
         # git push（如果远程有新提交，先拉再推）
-        returncode, stdout, stderr = self._run_git("push", "-u", "origin", "main")
+        returncode, stdout, stderr = self._run_git("push", "-u", "origin", self.config.branch)
         if returncode != 0 and "fetch first" in (stderr + stdout):
             # 远程有更新，先拉取再推送
             self._run_git("fetch", "origin")
             self._run_git("merge", "origin/main", "--allow-unrelated-histories")
-            returncode, stdout, stderr = self._run_git("push", "-u", "origin", "main")
+            returncode, stdout, stderr = self._run_git("push", "-u", "origin", self.config.branch)
         if returncode != 0:
             return False, stderr or stdout or "push failed"
 
