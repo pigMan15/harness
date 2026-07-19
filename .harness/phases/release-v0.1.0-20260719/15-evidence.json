@@ -1,0 +1,70 @@
+{
+  "run_id": "release-v0.1.0-20260719",
+  "intent": "DEPLOYMENT",
+  "risk": "MEDIUM",
+  "changed_files": [
+    "harness_cli/dist/bridle.exe (15MB, rebuilt)",
+    "harness_cli/dist/bridle-v0.1.0.exe (15MB, versioned copy)",
+    ".harness/state.json (new run)",
+    ".harness/phases/release-v0.1.0-20260719/* (phase artifacts)"
+  ],
+  "commands": [
+    {
+      "command": "python -m PyInstaller bridle.spec --clean --noconfirm",
+      "result": "exit 0, bridle.exe (15MB) built successfully",
+      "evidence": "build log 19500 lines, no errors"
+    },
+    {
+      "command": "bridle.exe --version",
+      "result": "bridle v0.1.0  (harness schema: 1.0)",
+      "evidence": "stdout captured"
+    },
+    {
+      "command": "bridle.exe status --json",
+      "result": "valid JSON with 6 nodes, 8 gates",
+      "evidence": "stdout captured"
+    },
+    {
+      "command": "bridle.exe gates --json",
+      "result": "8 gates returned",
+      "evidence": "stdout captured"
+    },
+    {
+      "command": "bridle.exe list",
+      "result": "3 runs displayed",
+      "evidence": "stdout captured"
+    },
+    {
+      "command": "bridle.exe validate",
+      "result": "Harness validation passed",
+      "evidence": "stdout captured"
+    }
+  ],
+  "gates": {
+    "G1_REQUIREMENTS": "NOT_REQUIRED",
+    "G2_DESIGN": "NOT_REQUIRED",
+    "G3_COMPILE": "NOT_REQUIRED",
+    "G4_UNIT_TEST": "NOT_REQUIRED",
+    "G5_ATDD": "NOT_REQUIRED",
+    "G6_EVIDENCE": "PASS",
+    "G7_PRERELEASE": "PASS",
+    "G8_ACCEPTANCE": "PASS"
+  },
+  "artifacts": {
+    "INTAKE": "00-intake.md",
+    "PRE_MORTEM": "05-pre-mortem.md",
+    "PRERELEASE_DEPLOYMENT": "16-prerelease-deployment.md",
+    "INTERFACE_TEST": "17-interface-test.md",
+    "ACCEPTANCE_REPORT": "18-acceptance-report.md"
+  },
+  "waivers": [
+    "G1-G5: DEPLOYMENT/MEDIUM route does not require these gates",
+    "TUI interactive test: requires terminal, not automated",
+    "Cross-platform test: Windows only"
+  ],
+  "residual_risks": [
+    "gh CLI not installed — GitHub Release must be created manually or via web UI",
+    "TUI mode not tested in automation",
+    "Cross-platform (macOS/Linux) compatibility not verified"
+  ]
+}

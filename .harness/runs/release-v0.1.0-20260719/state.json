@@ -43,6 +43,6 @@
     "G8_ACCEPTANCE": "PASS"
   },
   "retry_counts": {},
-  "last_updated": "2026-07-19T22:47:00+08:00",
-  "notes": "✅ GitHub Release v0.1.0 发布成功！https://github.com/pigMan15/harness/releases/tag/v0.1.0 — bridle-v0.1.0.exe (15MB) 已上传。"
+  "last_updated": "2026-07-19T18:40:00+08:00",
+  "notes": "DEPLOYMENT/MEDIUM complete. bridle.exe built (15MB), 5/5 interface tests passed. gh CLI not installed — GitHub Release requires manual web UI upload or install gh first."
 }

@@ -1,0 +1,7 @@
+{
+  "tag_name": "v0.1.0",
+  "name": "Bridle v0.1.0 — AI Coding Harness CLI",
+  "body": "## Bridle v0.1.0 — AI Coding Harness CLI & TUI\n\n首个发布版本。用文件化工程流程替代临时 prompt，让 AI 辅助开发变得可约束、可恢复、可审计、可评测。\n\n### 功能\n\n- **10 个 CLI 命令**：init / new / status / validate / gates / list / save / switch / register / projects\n- **TUI 交互看板**：多项目管理、键盘导航、门禁面板\n- **中英文国际化**：`--lang zh/en` 切换\n- **21 节点工作流**：意图感知路由 + 8 道质量门禁\n- **11 角色模型**：dispatcher / orchestrator / developer / verifier 等\n\n### 安装\n\n下载 `bridle-v0.1.0.exe`（15MB 单文件，无需 Python 环境），放到 PATH 目录即可全局使用。\n\n```powershell\nmkdir C:\\Users\\$env:USERNAME\\bridle\ncopy bridle-v0.1.0.exe C:\\Users\\$env:USERNAME\\bridle\\bridle.exe\n[Environment]::SetEnvironmentVariable(\"Path\", $env:Path + \";C:\\Users\\$env:USERNAME\\bridle\", [EnvironmentVariableTarget]::User)\n```\n\n### 从源码安装\n\n```bash\ncd harness_cli && pip install -e .\n```",
+  "draft": false,
+  "prerelease": false
+}
