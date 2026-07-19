@@ -273,24 +273,28 @@ class KnowledgeIndex:
 
 
 class SyncManager:
-    """通过 git 管理知识库的拉取和推送。"""
+    """通过 git 管理知识库的拉取和推送。
+
+    git 元数据存放在 .harness/knowledge-git/，工作树指向 .harness/knowledge/，
+    避免嵌套 .git 目录污染项目仓库。
+    """
 
     def __init__(self, root: str, config: KnowledgeConfig) -> None:
         self.root = root
         self.config = config
         from ..constants import KNOWLEDGE_DIR
         self.knowledge_dir = Path(root) / KNOWLEDGE_DIR
+        self._git_dir = Path(root) / ".harness" / "knowledge-git"
 
     def has_remote(self) -> bool:
         """是否配置了远程仓库。"""
         return bool(self.config.remote_url)
 
     def _run_git(self, *args: str) -> tuple[int, str, str]:
-        """执行 git 命令。"""
+        """执行 git 命令，指向独立 git-dir 和工作树。"""
         try:
             result = subprocess.run(
-                ["git", *args],
-                cwd=str(self.knowledge_dir),
+                ["git", "--git-dir", str(self._git_dir), "--work-tree", str(self.knowledge_dir), *args],
                 capture_output=True,
                 text=True,
                 timeout=60,
@@ -302,21 +306,17 @@ class SyncManager:
             return -1, "", "git command timed out"
 
     def _ensure_git_repo(self) -> tuple[bool, str]:
-        """确保 knowledge/ 是一个 git 仓库。"""
-        git_dir = self.knowledge_dir / ".git"
-        if not git_dir.exists():
+        """确保 knowledge-git 是一个 git 仓库。"""
+        if not self._git_dir.exists():
             self.knowledge_dir.mkdir(parents=True, exist_ok=True)
             returncode, stdout, stderr = self._run_git("init", "-b", "main")
             if returncode != 0:
-                # 旧版 git 不支持 -b，回退
                 returncode, stdout, stderr = self._run_git("init")
                 if returncode != 0:
                     return False, f"git init failed: {stderr}"
-            # 配置 remote
             if self.config.remote_url:
                 self._run_git("remote", "add", "origin", self.config.remote_url)
         else:
-            # 已有 .git，检查 remote url 是否匹配
             returncode, stdout, stderr = self._run_git("remote", "get-url", "origin")
             if returncode != 0 and self.config.remote_url:
                 self._run_git("remote", "add", "origin", self.config.remote_url)

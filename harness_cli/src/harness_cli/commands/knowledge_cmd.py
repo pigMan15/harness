@@ -39,6 +39,19 @@ console = Console()
 knowledge_app = typer.Typer(name="knowledge", help=_("knowledge.title"))
 
 
+def _ensure_project_gitignore(project_root: Path) -> None:
+    """在项目 .gitignore 中添加知识库 git 元数据排除。"""
+    gitignore = project_root / ".gitignore"
+    entry = ".harness/knowledge-git/"
+    if gitignore.exists():
+        content = gitignore.read_text(encoding="utf-8")
+        if entry not in content:
+            with gitignore.open("a", encoding="utf-8") as f:
+                f.write(f"\n{entry}\n")
+    else:
+        gitignore.write_text(f"{entry}\n", encoding="utf-8")
+
+
 # ──────────────────────────────────────────────
 # init
 # ──────────────────────────────────────────────
@@ -73,6 +86,9 @@ def knowledge_init(
     # private/.gitignore
     gitignore = knowledge_root / "private" / ".gitignore"
     gitignore.write_text("*\n", encoding="utf-8")
+
+    # 项目根 .gitignore：排除知识库 git 元数据
+    _ensure_project_gitignore(root)
 
     # SYNC.yaml
     KnowledgeConfig().save(str(root))
