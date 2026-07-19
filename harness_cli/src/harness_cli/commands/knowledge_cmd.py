@@ -40,16 +40,24 @@ knowledge_app = typer.Typer(name="knowledge", help=_("knowledge.title"))
 
 
 def _ensure_project_gitignore(project_root: Path) -> None:
-    """在项目 .gitignore 中添加知识库 git 元数据排除。"""
+    """在项目 .gitignore 中排除知识库 git 元数据和知识文件。
+
+    知识点由 shared-knowledge 仓库独立管理，不应混入项目仓库。
+    """
     gitignore = project_root / ".gitignore"
-    entry = ".harness/knowledge-git/"
+    entries = [
+        "# Bridle 知识库——由独立 git 仓库管理，不纳入项目仓库",
+        ".harness/knowledge-git/",
+        ".harness/knowledge/",
+    ]
     if gitignore.exists():
-        content = gitignore.read_text(encoding="utf-8")
-        if entry not in content:
+        existing = gitignore.read_text(encoding="utf-8")
+        missing = [e for e in entries if e not in existing]
+        if missing:
             with gitignore.open("a", encoding="utf-8") as f:
-                f.write(f"\n{entry}\n")
+                f.write("\n" + "\n".join(missing) + "\n")
     else:
-        gitignore.write_text(f"{entry}\n", encoding="utf-8")
+        gitignore.write_text("\n".join(entries) + "\n", encoding="utf-8")
 
 
 # ──────────────────────────────────────────────
