@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.scripts]
-bridle = "harness_cli.main:app"
+bridle = "harness_cli.cli:main"
 
 [project.optional-dependencies]
 dev = [

@@ -8,8 +8,15 @@ import os
 from pathlib import Path
 from functools import lru_cache
 
-# 翻译文件目录
-_LOCALES_DIR = Path(__file__).resolve().parent.parent / "locales"
+# 翻译文件目录（兼容 PyInstaller 打包）
+def _get_locales_dir() -> Path:
+    import sys
+    if getattr(sys, "frozen", False):
+        base = Path(getattr(sys, "_MEIPASS", "."))
+        return base / "locales"
+    return Path(__file__).resolve().parent.parent / "locales"
+
+_LOCALES_DIR = _get_locales_dir()
 
 # 当前语言
 _current_lang: str = ""
@@ -87,8 +94,9 @@ def _(key: str, **kwargs: object) -> str:
 
 
 def node_name(node_id: str) -> str:
-    """返回节点的翻译名称。英文环境下返回原始 node_id。"""
-    lang = get_lang()
-    if lang == "en":
-        return _(f"node.{node_id}")
-    return _(f"node.{node_id}")
+    """返回节点的翻译名称。找不到翻译时返回原始 node_id 的美化版本。"""
+    name = _(f"node.{node_id}")
+    if name == f"node.{node_id}":
+        # 无翻译时回退到标题化版本
+        return node_id.replace("_", " ").title()
+    return name

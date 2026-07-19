@@ -161,6 +161,64 @@ bridle projects              # 查看全部项目状态
 bridle                       # TUI 看板，上下键切换项目
 ```
 
+## 发布 Bridle 二进制
+
+```bash
+cd harness_cli
+
+# 1. 安装构建依赖
+pip install pyinstaller
+
+# 2. 构建单文件 exe（带版本号）
+python -m PyInstaller bridle.spec --clean --noconfirm
+
+# 3. 产物位置
+ls -lh dist/bridle-v0.1.0.exe   # ~15MB 单文件，无需 Python 环境
+
+# 4. 测试
+dist/bridle-v0.1.0.exe --version
+dist/bridle-v0.1.0.exe status
+```
+
+**设置到系统 PATH**：
+
+```powershell
+# 复制到固定目录
+mkdir C:\Users\<user>\bridle
+copy dist\bridle-v0.1.0.exe C:\Users\<user>\bridle\
+
+# 添加到用户 PATH（管理员 PowerShell）
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    $env:Path + ";C:\Users\<user>\bridle",
+    [EnvironmentVariableTarget]::User
+)
+
+# 重启终端后即可全局使用
+bridle-v0.1.0 --version
+bridle-v0.1.0 status
+bridle-v0.1.0            # TUI 看板
+```
+
+## 版本管理
+
+| 版本线 | 位置 | 说明 |
+|---|---|---|
+| CLI 版本 | `pyproject.toml` → `version` | 语义化版本 (0.1.0) |
+| Schema 版本 | `state.json` → `schema_version` | 结构不兼容时升级 (1.0) |
+| 发版节奏 | 0.x 快速迭代 → 1.0 稳定 | MAJOR.MINOR.PATCH |
+
+### 发版 checklist
+
+1. 更新 `pyproject.toml` 版本号
+2. 更新 `bridle.spec` 输出文件名 `bridle-vX.Y.Z`
+3. 运行 `pytest tests/`，确保 54 测试全通过
+4. 运行 `bridle validate`，确保结构校验通过
+5. 更新 `CHANGELOG.md`
+6. 构建二进制：`python -m PyInstaller bridle.spec --clean --noconfirm`
+7. 测试二进制：`dist/bridle-vX.Y.Z.exe status`
+8. Git tag + push + GitHub Release
+
 ## 相关文档
 
 - 接入指南：`.harness/PROJECT-INTEGRATION-GUIDE.md`

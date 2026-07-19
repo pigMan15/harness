@@ -5,11 +5,12 @@ import sys
 from pathlib import Path
 
 a = Analysis(
-    ['src/harness_cli/main.py'],
+    ['src/harness_cli/cli.py'],
     pathex=[],
     binaries=[],
     datas=[
         ('src/harness_cli/templates', 'templates'),
+        ('src/harness_cli/locales', 'locales'),
     ],
     hiddenimports=[
         'textual',
@@ -49,7 +50,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='bridle',
+    name='bridle-v0.1.0',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
