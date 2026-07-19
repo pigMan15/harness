@@ -383,8 +383,13 @@ class SyncManager:
         if returncode != 0 and "nothing to commit" not in (stdout + stderr):
             return False, f"git commit failed: {stderr}"
 
-        # git push
+        # git push（如果远程有新提交，先拉再推）
         returncode, stdout, stderr = self._run_git("push", "-u", "origin", "main")
+        if returncode != 0 and "fetch first" in (stderr + stdout):
+            # 远程有更新，先拉取再推送
+            self._run_git("fetch", "origin")
+            self._run_git("merge", "origin/main", "--allow-unrelated-histories")
+            returncode, stdout, stderr = self._run_git("push", "-u", "origin", "main")
         if returncode != 0:
             return False, stderr or stdout or "push failed"
 
