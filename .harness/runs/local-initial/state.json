@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "run_id": "local-initial",
+  "status": "IDLE",
+  "intent": "UNKNOWN",
+  "risk": "UNKNOWN",
+  "current_node": "INTAKE",
+  "next_role": "dispatcher",
+  "phase_dir": ".harness/phases/local-initial",
+  "required_nodes": [],
+  "completed_nodes": [],
+  "blocked_by": [],
+  "artifacts": {},
+  "gates": {
+    "G1_REQUIREMENTS": "NOT_RUN",
+    "G2_DESIGN": "NOT_RUN",
+    "G3_COMPILE": "NOT_RUN",
+    "G4_UNIT_TEST": "NOT_RUN",
+    "G5_ATDD": "NOT_RUN",
+    "G6_EVIDENCE": "NOT_RUN",
+    "G7_PRERELEASE": "NOT_RUN",
+    "G8_ACCEPTANCE": "NOT_RUN"
+  },
+  "last_updated": null,
+  "notes": "Initialize a new run by setting run_id, intent, risk, required_nodes, and current_node."
+}

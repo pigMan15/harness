@@ -1,0 +1,45 @@
+[project]
+name = "bridle-cli"
+version = "0.1.0"
+description = "AI Coding Harness CLI & TUI — structured workflow for AI-assisted development"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "pigMan15"}]
+keywords = ["ai-coding", "harness", "workflow", "cli", "tui", "developer-tools"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Version Control",
+]
+
+dependencies = [
+    "typer>=0.9",
+    "rich>=13.0",
+    "textual>=0.50",
+    "pyyaml>=6.0",
+    "jsonschema>=4.20",
+]
+
+[project.scripts]
+bridle = "harness_cli.main:app"
+
+[project.optional-dependencies]
+dev = [
+    "pyinstaller>=6.0",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

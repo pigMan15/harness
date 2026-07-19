@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "run_id": "harness-tui-20260719",
+  "status": "DONE",
+  "intent": "FEATURE",
+  "risk": "MEDIUM",
+  "current_node": "ACCEPTANCE_REPORT",
+  "next_role": "orchestrator",
+  "phase_dir": ".harness/phases/harness-tui-20260719",
+  "required_nodes": [
+    "INTAKE",
+    "SOLUTION_DESIGN",
+    "IMPLEMENTATION_PLAN",
+    "DEVELOPMENT",
+    "EVIDENCE_CAPTURE",
+    "ACCEPTANCE_REPORT"
+  ],
+  "completed_nodes": [
+    "INTAKE",
+    "SOLUTION_DESIGN",
+    "IMPLEMENTATION_PLAN",
+    "DEVELOPMENT",
+    "EVIDENCE_CAPTURE",
+    "ACCEPTANCE_REPORT"
+  ],
+  "blocked_by": [],
+  "artifacts": {
+    "INTAKE": "00-intake.md",
+    "SOLUTION_DESIGN": "03-solution-design.md",
+    "IMPLEMENTATION_PLAN": "06-implementation-plan.md",
+    "DEVELOPMENT": "11-development.md",
+    "ACCEPTANCE_REPORT": "18-acceptance-report.md"
+  },
+  "gates": {
+    "G1_REQUIREMENTS": "PASS",
+    "G2_DESIGN": "PASS",
+    "G3_COMPILE": "WAIVED",
+    "G4_UNIT_TEST": "WAIVED",
+    "G5_ATDD": "NOT_REQUIRED",
+    "G6_EVIDENCE": "PASS",
+    "G7_PRERELEASE": "NOT_REQUIRED",
+    "G8_ACCEPTANCE": "PASS"
+  },
+  "retry_counts": {},
+  "last_updated": "2026-07-19T17:45:00+08:00",
+  "notes": "Bridle v0.1.0 MVP complete. 10 CLI commands verified end-to-end. 30 source files, 30 minutes of dev time."
+}

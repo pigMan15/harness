@@ -1,0 +1,148 @@
+﻿schema_version: "1.0"
+artifact_root: "state.phase_dir"
+
+nodes:
+  - id: INTAKE
+    role: dispatcher
+    artifact: "00-intake.md"
+    gates: []
+  - id: CONTEXT_PACK
+    role: requirement-analyst
+    artifact: "00-context-pack.md"
+    gates: []
+  - id: REQUIREMENT_REVIEW
+    role: requirement-analyst
+    artifact: "01-requirement-review.md"
+    gates: ["G1_REQUIREMENTS"]
+  - id: REQUIREMENT_CONFIRMATION
+    role: orchestrator
+    artifact: "02-requirement-confirmation.md"
+    gates: ["G1_REQUIREMENTS"]
+  - id: SOLUTION_DESIGN
+    role: tech-architect
+    artifact: "03-solution-design.md"
+    gates: ["G2_DESIGN"]
+  - id: SOLUTION_CONFIRMATION
+    role: orchestrator
+    artifact: "04-solution-confirmation.md"
+    gates: ["G2_DESIGN"]
+  - id: PRE_MORTEM
+    role: quality-guardian
+    artifact: "05-pre-mortem.md"
+    gates: ["G2_DESIGN"]
+  - id: IMPLEMENTATION_PLAN
+    role: plan-generator
+    artifact: "06-implementation-plan.md"
+    gates: ["G2_DESIGN"]
+  - id: ACCEPTANCE_CONFIRMATION
+    role: orchestrator
+    artifact: "07-acceptance-confirmation.md"
+    gates: ["G1_REQUIREMENTS"]
+  - id: CHANGE_REQUEST
+    role: state-keeper
+    artifact: "08-change-request.md"
+    gates: []
+  - id: BRANCH_CREATION
+    role: state-keeper
+    artifact: "09-branch.md"
+    gates: []
+  - id: WORKTREE_CREATION
+    role: state-keeper
+    artifact: "10-worktree.md"
+    gates: []
+  - id: CODING_DESIGN_CONFIRMATION
+    role: developer
+    artifact: "10-coding-design.md"
+    gates: ["G2_DESIGN"]
+  - id: DEVELOPMENT
+    role: developer
+    artifact: "11-development.md"
+    gates: []
+  - id: COMPILE
+    role: verifier
+    artifact: "12-compile.md"
+    gates: ["G3_COMPILE"]
+  - id: UNIT_TEST
+    role: verifier
+    artifact: "13-unit-test.md"
+    gates: ["G4_UNIT_TEST"]
+  - id: ATDD
+    role: verifier
+    artifact: "14-atdd.md"
+    gates: ["G5_ATDD"]
+  - id: EVIDENCE_CAPTURE
+    role: verifier
+    artifact: "15-evidence.json"
+    gates: ["G6_EVIDENCE"]
+  - id: PRERELEASE_DEPLOYMENT
+    role: deployer
+    artifact: "16-prerelease-deployment.md"
+    gates: ["G7_PRERELEASE"]
+  - id: INTERFACE_TEST
+    role: tester
+    artifact: "17-interface-test.md"
+    gates: ["G7_PRERELEASE"]
+  - id: ACCEPTANCE_REPORT
+    role: orchestrator
+    artifact: "18-acceptance-report.md"
+    gates: ["G8_ACCEPTANCE"]
+
+routes:
+  QUERY:
+    NA: ["INTAKE"]
+  BUG_FIX:
+    LOW: ["INTAKE", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    MEDIUM: ["INTAKE", "REQUIREMENT_REVIEW", "IMPLEMENTATION_PLAN", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    HIGH: ["INTAKE", "REQUIREMENT_REVIEW", "SOLUTION_DESIGN", "PRE_MORTEM", "IMPLEMENTATION_PLAN", "CODING_DESIGN_CONFIRMATION", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "ATDD", "EVIDENCE_CAPTURE", "PRERELEASE_DEPLOYMENT", "INTERFACE_TEST", "ACCEPTANCE_REPORT"]
+  FEATURE:
+    LOW: ["INTAKE", "REQUIREMENT_REVIEW", "IMPLEMENTATION_PLAN", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    MEDIUM: ["INTAKE", "CONTEXT_PACK", "REQUIREMENT_REVIEW", "SOLUTION_DESIGN", "IMPLEMENTATION_PLAN", "ACCEPTANCE_CONFIRMATION", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    HIGH: ["INTAKE", "CONTEXT_PACK", "REQUIREMENT_REVIEW", "REQUIREMENT_CONFIRMATION", "SOLUTION_DESIGN", "SOLUTION_CONFIRMATION", "PRE_MORTEM", "IMPLEMENTATION_PLAN", "ACCEPTANCE_CONFIRMATION", "CHANGE_REQUEST", "BRANCH_CREATION", "WORKTREE_CREATION", "CODING_DESIGN_CONFIRMATION", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "ATDD", "EVIDENCE_CAPTURE", "PRERELEASE_DEPLOYMENT", "INTERFACE_TEST", "ACCEPTANCE_REPORT"]
+  REFACTOR:
+    LOW: ["INTAKE", "IMPLEMENTATION_PLAN", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    MEDIUM: ["INTAKE", "SOLUTION_DESIGN", "IMPLEMENTATION_PLAN", "CODING_DESIGN_CONFIRMATION", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    HIGH: ["INTAKE", "REQUIREMENT_REVIEW", "SOLUTION_DESIGN", "PRE_MORTEM", "IMPLEMENTATION_PLAN", "CODING_DESIGN_CONFIRMATION", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "ATDD", "EVIDENCE_CAPTURE", "PRERELEASE_DEPLOYMENT", "INTERFACE_TEST", "ACCEPTANCE_REPORT"]
+  DEPLOYMENT:
+    MEDIUM: ["INTAKE", "PRE_MORTEM", "PRERELEASE_DEPLOYMENT", "INTERFACE_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    HIGH: ["INTAKE", "REQUIREMENT_REVIEW", "PRE_MORTEM", "PRERELEASE_DEPLOYMENT", "INTERFACE_TEST", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+  INCIDENT:
+    MEDIUM: ["INTAKE", "REQUIREMENT_REVIEW", "EVIDENCE_CAPTURE", "ACCEPTANCE_REPORT"]
+    HIGH: ["INTAKE", "REQUIREMENT_REVIEW", "PRE_MORTEM", "DEVELOPMENT", "COMPILE", "UNIT_TEST", "ATDD", "EVIDENCE_CAPTURE", "PRERELEASE_DEPLOYMENT", "INTERFACE_TEST", "ACCEPTANCE_REPORT"]
+
+hard_rules:
+  code_changed_requires:
+    - COMPILE
+    - UNIT_TEST
+    - EVIDENCE_CAPTURE
+  high_risk_or_deployment_requires:
+    - PRERELEASE_DEPLOYMENT
+    - INTERFACE_TEST
+  high_risk_requires:
+    - REQUIREMENT_CONFIRMATION
+    - SOLUTION_CONFIRMATION
+    - PRE_MORTEM
+    - ACCEPTANCE_CONFIRMATION
+
+failure_recovery:
+  max_auto_retries_per_gate: 2
+  gate_to_node:
+    G1_REQUIREMENTS: REQUIREMENT_REVIEW
+    G2_DESIGN: SOLUTION_DESIGN
+    G3_COMPILE: DEVELOPMENT
+    G4_UNIT_TEST: DEVELOPMENT
+    G5_ATDD: DEVELOPMENT
+    G6_EVIDENCE: EVIDENCE_CAPTURE
+    G7_PRERELEASE: PRERELEASE_DEPLOYMENT
+    G8_ACCEPTANCE: ACCEPTANCE_REPORT
+
+gate_meanings:
+  G1_REQUIREMENTS: "必须有明确范围和验收标准。"
+  G2_DESIGN: "必须有设计、风险、回滚和实施计划。"
+  G3_COMPILE: "改动代码必须能编译，或通过等价静态检查。"
+  G4_UNIT_TEST: "相关单元测试必须通过，或记录豁免。"
+  G5_ATDD: "中高风险行为必须有集成、ATDD 或场景验证。"
+  G6_EVIDENCE: "证据文件必须记录命令、结果、产物和豁免。"
+  G7_PRERELEASE: "业务代码变更必须完成预发部署和接口检查。"
+  G8_ACCEPTANCE: "验收报告必须总结范围、变更、验证和剩余风险。"
+
+

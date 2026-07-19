@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Harness State",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "status",
+    "intent",
+    "risk",
+    "current_node",
+    "next_role",
+    "phase_dir",
+    "required_nodes",
+    "completed_nodes",
+    "blocked_by",
+    "artifacts",
+    "gates"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "run_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["IDLE", "ROUTING", "IN_PROGRESS", "REVIEWING", "DESIGNING", "PLANNING", "DEVELOPING", "VERIFYING", "DEPLOYING", "TESTING", "REPORTING", "BLOCKED", "DONE"]
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["UNKNOWN", "QUERY", "BUG_FIX", "FEATURE", "REFACTOR", "DEPLOYMENT", "INCIDENT"]
+    },
+    "risk": {
+      "type": "string",
+      "enum": ["UNKNOWN", "NA", "LOW", "MEDIUM", "HIGH"]
+    },
+    "current_node": { "type": "string" },
+    "next_role": { "type": "string" },
+    "phase_dir": { "type": "string" },
+    "required_nodes": { "type": "array", "items": { "type": "string" } },
+    "completed_nodes": { "type": "array", "items": { "type": "string" } },
+    "blocked_by": { "type": "array", "items": { "type": "string" } },
+    "artifacts": { "type": "object", "additionalProperties": { "type": "string" } },
+    "gates": { "type": "object", "additionalProperties": { "type": "string" } },
+    "retry_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "last_updated": { "type": ["string", "null"] },
+    "notes": { "type": "string" }
+  }
+}
