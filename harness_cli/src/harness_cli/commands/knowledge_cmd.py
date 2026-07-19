@@ -48,6 +48,21 @@ _DOMAIN_ZH: dict[str, str] = {
 }
 
 
+def _extract_text(item) -> str:
+    """从 evidence 条目提取可读文本，处理 str 和 dict 两种格式。"""
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        # 取 scope/description/reason 等常见字段拼接
+        parts = []
+        for key in ("scope", "description", "reason", "note", "detail"):
+            val = item.get(key, "")
+            if val:
+                parts.append(str(val))
+        return "：".join(parts) if parts else str(item)
+    return str(item)
+
+
 def _ensure_project_gitignore(project_root: Path) -> None:
     """在项目 .gitignore 中排除知识库 git 元数据和知识文件。
 
@@ -207,7 +222,7 @@ def knowledge_extract(
     # 从 evidence 提取
     residual_risks = evidence.get("residual_risks", [])
     for risk in residual_risks:
-        risk_text = str(risk)
+        risk_text = _extract_text(risk)
         slug = re.sub(r"[^a-z0-9一-鿿]+", "-", risk_text[:60].lower()).strip("-")
         candidates.append({
             "id": f"risk-{run_id}-{slug[:40]}",
@@ -223,7 +238,7 @@ def knowledge_extract(
 
     waivers = evidence.get("waivers", [])
     for waiver in waivers:
-        waiver_text = str(waiver)
+        waiver_text = _extract_text(waiver)
         slug = re.sub(r"[^a-z0-9一-鿿]+", "-", waiver_text[:60].lower()).strip("-")
         candidates.append({
             "id": f"waiver-{run_id}-{slug[:40]}",
