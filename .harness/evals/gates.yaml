@@ -1,0 +1,84 @@
+﻿schema_version: "1.0"
+artifact_root: "state.phase_dir"
+
+gates:
+  G1_REQUIREMENTS:
+    description: "范围和验收标准明确。"
+    required_artifacts:
+      - "01-requirement-review.md"
+    pass_conditions:
+      - "目标已说明。"
+      - "验收标准可观察。"
+      - "开放问题已解决或已记录。"
+
+  G2_DESIGN:
+    description: "设计、风险和实施计划已存在。"
+    required_artifacts:
+      - "03-solution-design.md"
+      - "06-implementation-plan.md"
+    pass_conditions:
+      - "已点名受影响文件或模块。"
+      - "中高风险任务已记录回滚方案。"
+      - "计划包含验证命令或检查方式。"
+
+  G3_COMPILE:
+    description: "变更代码已编译，或等价静态检查已通过。"
+    required_artifacts:
+      - "12-compile.md"
+    pass_conditions:
+      - "命令已记录。"
+      - "退出码或等价结果已记录。"
+      - "失败没有被隐藏。"
+
+  G4_UNIT_TEST:
+    description: "相关单元测试通过，或豁免已记录。"
+    required_artifacts:
+      - "13-unit-test.md"
+    pass_conditions:
+      - "聚焦测试结果已记录。"
+      - "没有未解释的相关失败测试。"
+
+  G5_ATDD:
+    description: "中高风险任务已验证集成或场景行为。"
+    required_artifacts:
+      - "14-atdd.md"
+    pass_conditions:
+      - "场景输入和输出已记录。"
+      - "结果为 PASS，或豁免已记录。"
+
+  G6_EVIDENCE:
+    description: "证据文件已总结命令、门禁、产物和剩余风险。"
+    required_artifacts:
+      - "15-evidence.json"
+    pass_conditions:
+      - "变更文件已列出。"
+      - "命令和结果已列出。"
+      - "豁免和剩余风险已明确。"
+
+  G7_PRERELEASE:
+    description: "需要时，预发部署和接口测试已完成。"
+    required_artifacts:
+      - "16-prerelease-deployment.md"
+      - "17-interface-test.md"
+    pass_conditions:
+      - "环境和版本已记录。"
+      - "冒烟或接口测试结果已记录。"
+
+  G8_ACCEPTANCE:
+    description: "最终报告完整。"
+    required_artifacts:
+      - "18-acceptance-report.md"
+    pass_conditions:
+      - "范围已总结。"
+      - "验证已总结。"
+      - "剩余风险已列出。"
+
+status_values:
+  - PASS
+  - FAIL
+  - WAIVED
+  - BLOCKED
+  - NOT_REQUIRED
+  - NOT_RUN
+
+

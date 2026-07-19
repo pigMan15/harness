@@ -1,0 +1,71 @@
+{
+  "run_id": "harness-light-optimization-20260719",
+  "result": "PASS_WITH_WAIVER",
+  "changed_files": [
+    ".harness/workflow.yaml",
+    ".harness/state.schema.json",
+    ".harness/agents/dispatcher.md",
+    ".harness/agents/verifier.md",
+    ".harness/evals/runbook.md",
+    ".harness/scripts/validate-harness.ps1",
+    ".harness/scripts/validate-harness.sh",
+    ".harness/state.json",
+    ".harness/runs/harness-light-optimization-20260719/state.json"
+  ],
+  "commands": [
+    {
+      "command": "ConvertFrom-Json state.schema.json and state.json",
+      "status": "PASS",
+      "result": "JSON_PARSE=PASS"
+    },
+    {
+      "command": ".\\.harness\\scripts\\validate-harness.ps1",
+      "status": "PASS",
+      "exit_code": 0,
+      "result": "Harness validation passed."
+    },
+    {
+      "command": ".\\.harness\\scripts\\validate-harness.cmd",
+      "status": "PASS",
+      "exit_code": 0,
+      "result": "Harness validation passed."
+    },
+    {
+      "command": "execute validate-harness.sh embedded Python with Python 3.14",
+      "status": "PASS",
+      "exit_code": 0,
+      "result": "Harness validation passed."
+    },
+    {
+      "command": "negative validation fixtures",
+      "status": "PASS",
+      "result": "PowerShell 4/4 and Shell Python core 4/4 rejected invalid fixtures"
+    },
+    {
+      "command": "bash --version",
+      "status": "WAIVED",
+      "exit_code": 1,
+      "result": "WSL distribution is not installed; native shell wrapper was not executed"
+    }
+  ],
+  "gates": {
+    "G1_REQUIREMENTS": "NOT_REQUIRED",
+    "G2_DESIGN": "PASS",
+    "G3_COMPILE": "PASS",
+    "G4_UNIT_TEST": "PASS",
+    "G5_ATDD": "NOT_REQUIRED",
+    "G6_EVIDENCE": "PASS",
+    "G7_PRERELEASE": "NOT_REQUIRED",
+    "G8_ACCEPTANCE": "PASS"
+  },
+  "waivers": [
+    {
+      "scope": "validate-harness.sh native wrapper execution",
+      "reason": "The current Windows host has no usable Bash/WSL distribution.",
+      "mitigation": "The embedded Python validation core was executed directly with positive and negative cases."
+    }
+  ],
+  "remaining_risks": [
+    "Run validate-harness.sh once on Linux, macOS, Git Bash, or a configured WSL environment to verify the POSIX wrapper itself."
+  ]
+}

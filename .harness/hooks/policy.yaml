@@ -1,0 +1,29 @@
+﻿schema_version: "1.0"
+
+purpose: "支持 hooks 的工具可以参考本运行时策略；如果工具不支持 hooks，则本文件作为策略文档使用。"
+
+write_policies:
+  state_file:
+    path: ".harness/state.json"
+    allowed_roles:
+      - dispatcher
+      - state-keeper
+      - verifier
+    default: reject
+  gates:
+    path: "state.phase_dir/15-evidence.json"
+    allowed_roles:
+      - verifier
+      - tester
+      - deployer
+    default: reject
+
+confirm_before:
+  - "git push --force"
+  - "git reset --hard"
+  - "rm -rf"
+  - "production deploy"
+  - "database migration"
+  - "secret or credential change"
+
+fail_closed: true
