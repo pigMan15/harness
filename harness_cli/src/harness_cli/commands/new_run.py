@@ -84,5 +84,19 @@ def new(
     table.add_row("Status", state.status.value)
     console.print(table)
 
+    # 自动拉取共享知识库
+    try:
+        from ..core.knowledge import KnowledgeConfig, SyncManager
+        cfg = KnowledgeConfig.load(str(root))
+        if cfg.remote_url and cfg.auto_pull:
+            mgr = SyncManager(str(root), cfg)
+            ok, msg = mgr.pull()
+            if ok:
+                console.print(f"[dim]Knowledge pulled: {msg}[/]")
+            else:
+                console.print(f"[dim]Knowledge pull skipped: {msg}[/]")
+    except Exception:
+        pass  # 知识库拉取失败不应阻塞 run 创建
+
     console.print()
     console.print(f"[dim]Next: dispatcher will route to the first required node.[/]")

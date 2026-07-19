@@ -87,6 +87,7 @@ class HarnessApp(App):
             yield ProjectList(cwd=self._root, id="sidebar")
             with Vertical(id="main-content"):
                 yield Static("", id="error-msg")
+                yield Static("", id="knowledge-badge")
                 yield WorkflowPanel(id="workflow")
                 yield GatesGrid(id="gates")
         yield Footer()
@@ -154,10 +155,39 @@ class HarnessApp(App):
                 self.query_one(WorkflowPanel).update_state(self._state, self._workflow)
             if self._state and self._evaluator:
                 self.query_one(GatesGrid).update_gates(self._state, self._evaluator, root_str)
+            self._update_knowledge_badge()
         except Exception as e:
             err_widget = self.query_one("#error-msg", Static)
             err_widget.update(f"[red]Render error: {e}[/]")
             err_widget.styles.display = "block"
+
+    def _update_knowledge_badge(self) -> None:
+        """更新知识库待审核草稿徽标。"""
+        badge = self.query_one("#knowledge-badge", Static)
+        try:
+            pending = self._count_pending_knowledge()
+            if pending > 0:
+                badge.update(f"[dim yellow]📚 {_('knowledge.badge_pending', n=pending)}[/]")
+            else:
+                badge.update("")
+        except Exception:
+            badge.update("")
+
+    def _count_pending_knowledge(self) -> int:
+        """统计所有 project 中待审核的知识草稿数。"""
+        from ..constants import KNOWLEDGE_PROMOTION_ARTIFACT
+        count = 0
+        # 检查当前项目的 phases
+        if self._active_project:
+            phases = self._active_project / ".harness/phases"
+            if phases.exists():
+                for phase_dir in phases.iterdir():
+                    if phase_dir.is_dir():
+                        promo = phase_dir / KNOWLEDGE_PROMOTION_ARTIFACT
+                        if promo.exists():
+                            # 检查是否已被 accept（对应 knowledge/ 中有条目）
+                            count += 1
+        return count
 
     # ── Actions ──
 

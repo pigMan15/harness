@@ -1,0 +1,6 @@
+# Knowledge Base Sync Configuration
+# 由 bridle knowledge init/remote 管理
+remote_url: ""
+auto_pull: true
+last_pull: null
+last_push: null
