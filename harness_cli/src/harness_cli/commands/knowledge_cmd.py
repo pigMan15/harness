@@ -207,10 +207,12 @@ def knowledge_extract(
     # 从 evidence 提取
     residual_risks = evidence.get("residual_risks", [])
     for risk in residual_risks:
-        slug = re.sub(r"[^a-z0-9一-鿿]+", "-", str(risk)[:60].lower()).strip("-")
+        risk_text = str(risk)
+        slug = re.sub(r"[^a-z0-9一-鿿]+", "-", risk_text[:60].lower()).strip("-")
         candidates.append({
             "id": f"risk-{run_id}-{slug[:40]}",
-            "title": str(risk)[:120],
+            "title": risk_text[:120],
+            "description": f"## 问题描述\n\n{risk_text}\n\n## 来源\n\n- Run: {run_id}\n- 类型: 剩余风险\n\n## 建议\n\n建议在后续开发中关注此风险点。",
             "type": "pitfall",
             "type_zh": _TYPE_ZH.get("pitfall", "pitfall"),
             "priority": "P1",
@@ -221,10 +223,12 @@ def knowledge_extract(
 
     waivers = evidence.get("waivers", [])
     for waiver in waivers:
-        slug = re.sub(r"[^a-z0-9一-鿿]+", "-", str(waiver)[:60].lower()).strip("-")
+        waiver_text = str(waiver)
+        slug = re.sub(r"[^a-z0-9一-鿿]+", "-", waiver_text[:60].lower()).strip("-")
         candidates.append({
             "id": f"waiver-{run_id}-{slug[:40]}",
-            "title": str(waiver)[:120],
+            "title": waiver_text[:120],
+            "description": f"## 豁免说明\n\n{waiver_text}\n\n## 来源\n\n- Run: {run_id}\n- 类型: 测试豁免\n\n## 备注\n\n此项在本次 run 中因环境限制被豁免，后续条件具备时应补测。",
             "type": "case",
             "type_zh": _TYPE_ZH.get("case", "case"),
             "priority": "P2",
@@ -249,12 +253,13 @@ def knowledge_extract(
             "",
             "## 候选知识",
             "",
-            "| 类型 | 标题 | 优先级 | 领域 | 置信度 |",
-            "| --- | --- | --- | --- | --- |",
+            "| 类型 | 标题 | 优先级 | 领域 | 置信度 | 描述 |",
+            "| --- | --- | --- | --- | --- | --- |",
         ]
         for c in candidates:
+            desc = c.get("description", c["title"])[:200]
             promotion_lines.append(
-                f"| {c.get('type_zh', c['type'])} | {c['title'][:60]} | {c['priority']} | {c.get('domain_zh', c['domain'])} | {c['confidence']} |"
+                f"| {c.get('type_zh', c['type'])} | {c['title'][:60]} | {c['priority']} | {c.get('domain_zh', c['domain'])} | {c['confidence']} | {desc} |"
             )
         promotion_lines += [
             "",
@@ -336,19 +341,23 @@ def knowledge_accept(
         if len(cols) < 5:
             continue
 
-        eid = f"{cols[0]}-{run_id}-{re.sub(r'[^a-z0-9]+', '-', cols[1][:40].lower()).strip('-')}"
+        # 把中文标题转回英文 key 作为 id 前缀
+        type_en = next((k for k, v in _TYPE_ZH.items() if v == cols[0]), cols[0])
+        domain_en = next((k for k, v in _DOMAIN_ZH.items() if v == cols[3]), cols[3])
+        eid = f"{type_en}-{run_id}-{re.sub(r'[^a-z0-9一-鿿]+', '-', cols[1][:40].lower()).strip('-')}"
         if entry_id and eid != entry_id:
             continue
 
+        body_text = cols[5] if len(cols) >= 6 else cols[1]
         entry = KnowledgeEntry(
             id=eid,
             title=cols[1][:120],
-            type=cols[0],
+            type=type_en,
             priority=KnowledgePriority(cols[2]) if cols[2] in ("P0", "P1", "P2") else KnowledgePriority.P2,
-            domain=KnowledgeDomain(cols[3]) if cols[3] in (d.value for d in KnowledgeDomain) else KnowledgeDomain.ENGINEERING,
+            domain=KnowledgeDomain(domain_en) if domain_en in (d.value for d in KnowledgeDomain) else KnowledgeDomain.ENGINEERING,
             source_run=run_id,
             confidence=float(cols[4]) if len(cols) > 4 else 0.5,
-            body=f"来源: {run_id}\n\n{cols[1]}",
+            body=body_text,
         )
         entries.append(entry)
 
