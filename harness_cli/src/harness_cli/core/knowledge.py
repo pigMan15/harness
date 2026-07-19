@@ -306,12 +306,22 @@ class SyncManager:
         git_dir = self.knowledge_dir / ".git"
         if not git_dir.exists():
             self.knowledge_dir.mkdir(parents=True, exist_ok=True)
-            returncode, stdout, stderr = self._run_git("init")
+            returncode, stdout, stderr = self._run_git("init", "-b", "main")
             if returncode != 0:
-                return False, f"git init failed: {stderr}"
+                # 旧版 git 不支持 -b，回退
+                returncode, stdout, stderr = self._run_git("init")
+                if returncode != 0:
+                    return False, f"git init failed: {stderr}"
             # 配置 remote
             if self.config.remote_url:
                 self._run_git("remote", "add", "origin", self.config.remote_url)
+        else:
+            # 已有 .git，检查 remote url 是否匹配
+            returncode, stdout, stderr = self._run_git("remote", "get-url", "origin")
+            if returncode != 0 and self.config.remote_url:
+                self._run_git("remote", "add", "origin", self.config.remote_url)
+            elif returncode == 0 and self.config.remote_url and stdout != self.config.remote_url:
+                self._run_git("remote", "set-url", "origin", self.config.remote_url)
         return True, "ok"
 
     def pull(self) -> tuple[bool, str]:
@@ -323,21 +333,24 @@ class SyncManager:
         if not ok:
             return False, msg
 
-        # 检查 remote 是否已配置
-        returncode, stdout, stderr = self._run_git("remote", "get-url", "origin")
+        # 先 fetch
+        returncode, stdout, stderr = self._run_git("fetch", "origin")
         if returncode != 0:
-            returncode, _, _ = self._run_git("remote", "add", "origin", self.config.remote_url)
+            err = stderr or stdout
+            # 提供更清晰的错误信息
+            if "Host key verification failed" in err:
+                return False, f"SSH key not configured for remote. Use HTTPS URL instead, or set up SSH keys."
+            if "could not read" in err.lower() or "could not resolve" in err.lower():
+                return False, f"Cannot reach remote. Check your network and the URL."
+            return False, f"git fetch failed: {err}"
 
-        # 尝试 pull
-        returncode, stdout, stderr = self._run_git("pull", "origin", "main", "--rebase")
+        # 尝试 checkout remote main
+        returncode, stdout, stderr = self._run_git("checkout", "-b", "main", "origin/main")
         if returncode != 0:
-            # 尝试 master 分支
-            returncode, stdout, stderr = self._run_git("pull", "origin", "master", "--rebase")
-        if returncode != 0:
-            # 首次 clone 场景：remote 有内容但本地没有 commit
-            returncode, stdout, stderr = self._run_git("pull", "origin", "main", "--allow-unrelated-histories")
-        if returncode != 0:
-            return False, stderr or stdout or "pull failed"
+            # 或许已有 main 分支，尝试 reset
+            returncode, stdout, stderr = self._run_git("checkout", "main")
+            if returncode == 0:
+                self._run_git("merge", "origin/main", "--allow-unrelated-histories")
 
         now = datetime.now(timezone.utc).isoformat()
         self.config.last_pull = now
@@ -353,6 +366,11 @@ class SyncManager:
         if not ok:
             return False, msg
 
+        # 确保在 main 分支
+        returncode, stdout, stderr = self._run_git("checkout", "main")
+        if returncode != 0:
+            self._run_git("checkout", "-b", "main")
+
         # git add all
         returncode, stdout, stderr = self._run_git("add", "-A")
         if returncode != 0:
@@ -361,15 +379,11 @@ class SyncManager:
         # git commit
         msg_text = message or "knowledge: sync entries"
         returncode, stdout, stderr = self._run_git("commit", "-m", msg_text)
-        # commit 可能在 nothing to commit 时返回非零，这是正常的
         if returncode != 0 and "nothing to commit" not in (stdout + stderr):
             return False, f"git commit failed: {stderr}"
 
         # git push
-        returncode, stdout, stderr = self._run_git("push", "origin", "main")
-        if returncode != 0:
-            returncode, stdout, stderr = self._run_git("push", "origin", "master")
-
+        returncode, stdout, stderr = self._run_git("push", "-u", "origin", "main")
         if returncode != 0:
             return False, stderr or stdout or "push failed"
 
