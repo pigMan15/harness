@@ -47,6 +47,55 @@ bridle
 | `bridle register` | Register project to global list |
 | `bridle projects` | View all registered project statuses |
 | `bridle --lang zh` | Switch to Chinese UI |
+| `bridle knowledge init` | Initialize knowledge base skeleton |
+| `bridle knowledge remote <url>` | Bind shared knowledge repository |
+| `bridle knowledge extract <id>` | Extract incremental knowledge from a run |
+| `bridle knowledge review <id>` | Review candidate entries (--entry N to preview one) |
+| `bridle knowledge accept <id>` | Accept and write entries (--entry N for single) |
+| `bridle knowledge list` | List local knowledge entries |
+| `bridle knowledge search <q>` | Search the knowledge base |
+| `bridle knowledge push` | Push to shared repository |
+| `bridle knowledge pull` | Pull latest team knowledge |
+
+## Knowledge Sync (Team Shared)
+
+After each run, extract incremental engineering knowledge and sync via Git.
+
+### First-Time Setup
+
+```bash
+# Create an empty repo on GitHub: team/shared-knowledge (uncheck all init options)
+
+# New project (bridle init already includes knowledge skeleton):
+bridle knowledge remote https://github.com/team/shared-knowledge.git
+bridle knowledge push -m "init: initialize team knowledge base"
+
+# Existing project (add skeleton):
+bridle knowledge init
+bridle knowledge remote https://github.com/team/shared-knowledge.git
+bridle knowledge push -m "init: initialize team knowledge base"
+```
+
+### Daily Workflow
+
+```bash
+# After completing a run, promote knowledge
+bridle knowledge extract feat-001       # Extract incremental knowledge
+bridle knowledge review feat-001        # Review candidates
+bridle knowledge review feat-001 -e 1   # Preview entry #1
+bridle knowledge accept feat-001        # Accept all entries
+bridle knowledge accept feat-001 -e 2   # Accept entry #2 only
+bridle knowledge push                   # Push to shared repo
+
+# bridle new auto-pulls team knowledge
+bridle new feat-002 -i FEATURE -r MEDIUM
+# → Output: Knowledge pulled
+
+# Manual management
+bridle knowledge pull                   # Pull latest from team
+bridle knowledge list                   # List local entries
+bridle knowledge search "PyInstaller"   # Search knowledge
+```
 
 ## Design Principles
 
@@ -115,6 +164,7 @@ REFACTOR/MEDIUM → 9 nodes
 | 19 | PRERELEASE_DEPLOYMENT | Prerelease Deployment | deployer |
 | 20 | INTERFACE_TEST | Interface Test | tester |
 | 21 | ACCEPTANCE_REPORT | Acceptance Report | orchestrator |
+| 22 | KNOWLEDGE_PROMOTION | Knowledge Promotion | knowledge-keeper |
 
 ## 8 Quality Gates
 

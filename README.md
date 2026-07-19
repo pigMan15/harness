@@ -47,6 +47,15 @@ bridle
 | `bridle register` | 注册项目到全局列表 |
 | `bridle projects` | 查看所有已注册项目状态 |
 | `bridle --lang zh` | 切换中文界面 |
+| `bridle knowledge init` | 初始化知识库骨架 |
+| `bridle knowledge remote <url>` | 绑定团队共享知识库 |
+| `bridle knowledge extract <id>` | 从 run 提取增量知识 |
+| `bridle knowledge review <id>` | 审阅候选知识（--entry N 预览单条） |
+| `bridle knowledge accept <id>` | 确认写入知识库（--entry N 接受单条） |
+| `bridle knowledge list` | 列出本地知识条目 |
+| `bridle knowledge search <q>` | 搜索知识库 |
+| `bridle knowledge push` | 推送知识到共享仓库 |
+| `bridle knowledge pull` | 拉取团队最新知识 |
 
 ## 设计原则
 
@@ -115,6 +124,7 @@ REFACTOR/MEDIUM → 9 节点
 | 19 | PRERELEASE_DEPLOYMENT | 预发部署 | deployer |
 | 20 | INTERFACE_TEST | 接口测试 | tester |
 | 21 | ACCEPTANCE_REPORT | 验收报告 | orchestrator |
+| 22 | KNOWLEDGE_PROMOTION | 知识沉淀 | knowledge-keeper |
 
 ## 8 道质量门禁
 
@@ -133,7 +143,7 @@ REFACTOR/MEDIUM → 9 节点
 
 ## 角色模型（11 角色）
 
-`dispatcher` · `orchestrator` · `requirement-analyst` · `tech-architect` · `quality-guardian` · `plan-generator` · `developer` · `verifier` · `deployer` · `tester` · `state-keeper`
+`dispatcher` · `orchestrator` · `requirement-analyst` · `tech-architect` · `quality-guardian` · `plan-generator` · `developer` · `verifier` · `deployer` · `tester` · `state-keeper` · `knowledge-keeper`
 
 ## 使用方式（AI 侧）
 
@@ -153,6 +163,74 @@ REFACTOR/MEDIUM → 9 节点
 bridle list                  # 查看所有 runs
 bridle save                  # 保存当前快照
 bridle switch <run-id>       # 切换到历史 run
+```
+
+## 知识库同步（团队共享）
+
+每个 run 完成后提取增量工程知识，通过 Git 同步到团队共享仓库。
+
+### 首次使用
+
+```bash
+# 在 GitHub 创建一个空仓库 team/shared-knowledge（不勾选任何初始化选项）
+
+# 新项目（bridle init 已包含 knowledge 骨架）：
+bridle knowledge remote https://github.com/team/shared-knowledge.git
+bridle knowledge push -m "init: 初始化团队知识库"
+
+# 已有项目（补骨架）：
+bridle knowledge init
+bridle knowledge remote https://github.com/team/shared-knowledge.git
+bridle knowledge push -m "init: 初始化团队知识库"
+```
+
+### 日常工作流
+
+```bash
+# run 完成后沉淀知识
+bridle knowledge extract feat-001       # 提取增量知识
+bridle knowledge review feat-001        # 审阅候选条目
+bridle knowledge review feat-001 -e 1   # 预览第 1 条
+bridle knowledge accept feat-001        # 全部确认写入
+bridle knowledge accept feat-001 -e 2   # 只接受第 2 条
+bridle knowledge push                   # 推送到共享仓库
+
+# 创建新 run 时自动拉取团队知识（无需手动）
+bridle new feat-002 -i FEATURE -r MEDIUM
+# → 自动输出: Knowledge pulled
+
+# 或手动管理
+bridle knowledge pull                   # 拉取团队最新知识
+bridle knowledge list                   # 查看已有知识
+bridle knowledge search "PyInstaller"   # 搜索知识
+```
+
+### 目录结构
+
+```text
+.harness/
+  knowledge/                知识文件（git 排除，由独立仓库管理）
+    architecture/           架构决策 (ADR)
+    domain/                 业务领域知识
+    engineering/            工程实践（踩坑、配方）
+    operations/             运维与部署
+    runway/                 项目概览与规范
+    private/                本地私有（不同步）
+    index.md                知识索引
+    SYNC.yaml               同步配置（remote_url + branch）
+  knowledge-git/            知识库 git 元数据（git 排除）
+```
+
+### 团队协作
+
+```bash
+# 成员 A：沉淀并分享
+bridle knowledge extract feat-001 && bridle knowledge accept feat-001
+bridle knowledge push
+
+# 成员 B：自动获取（bridle new 时）或手动
+bridle knowledge pull
+bridle knowledge search "编译错误"
 ```
 
 ## 分布式接入
