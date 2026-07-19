@@ -86,11 +86,17 @@ def knowledge_init(
         encoding="utf-8",
     )
 
-    console.print(Panel(
-        f"[green]{_('knowledge.init_created', dir=str(knowledge_root))}[/]\n"
-        + "\n".join(f"  [dim]✓[/] {d}" for d in dirs_created),
-        title=_("knowledge.init_title"),
-    ))
+    try:
+        console.print(Panel(
+            f"[green]{_('knowledge.init_created', dir=str(knowledge_root))}[/]\n"
+            + "\n".join(f"  [dim]+[/] {d}" for d in dirs_created),
+            title=_("knowledge.init_title"),
+        ))
+    except UnicodeEncodeError:
+        # 降级到纯 ASCII 输出
+        print(f"[OK] {_('knowledge.init_created', dir=str(knowledge_root))}")
+        for d in dirs_created:
+            print(f"  + {d}")
 
 
 # ──────────────────────────────────────────────
