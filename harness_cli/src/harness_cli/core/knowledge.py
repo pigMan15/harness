@@ -296,10 +296,11 @@ class SyncManager:
             result = subprocess.run(
                 ["git", "--git-dir", str(self._git_dir), "--work-tree", str(self.knowledge_dir), *args],
                 capture_output=True,
-                text=True,
                 timeout=60,
             )
-            return result.returncode, result.stdout.strip(), result.stderr.strip()
+            stdout = (result.stdout or b"").decode("utf-8", errors="replace").strip()
+            stderr = (result.stderr or b"").decode("utf-8", errors="replace").strip()
+            return result.returncode, stdout, stderr
         except FileNotFoundError:
             return -1, "", "git not found in PATH"
         except subprocess.TimeoutExpired:
