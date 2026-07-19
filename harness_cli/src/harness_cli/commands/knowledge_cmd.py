@@ -38,6 +38,15 @@ from ..ui.console import print_error, print_success, print_info
 console = Console()
 knowledge_app = typer.Typer(name="knowledge", help=_("knowledge.title"))
 
+# 类型/领域的中文映射
+_TYPE_ZH: dict[str, str] = {
+    "case": "案例", "pitfall": "踩坑", "pattern": "模式", "rule": "规则", "adr": "架构决策",
+}
+_DOMAIN_ZH: dict[str, str] = {
+    "architecture": "架构", "domain": "业务领域", "engineering": "工程实践",
+    "operations": "运维", "runway": "项目跑道", "private": "私有",
+}
+
 
 def _ensure_project_gitignore(project_root: Path) -> None:
     """在项目 .gitignore 中排除知识库 git 元数据和知识文件。
@@ -198,25 +207,29 @@ def knowledge_extract(
     # 从 evidence 提取
     residual_risks = evidence.get("residual_risks", [])
     for risk in residual_risks:
-        slug = re.sub(r"[^a-z0-9]+", "-", str(risk)[:60].lower()).strip("-")
+        slug = re.sub(r"[^a-z0-9一-鿿]+", "-", str(risk)[:60].lower()).strip("-")
         candidates.append({
             "id": f"risk-{run_id}-{slug[:40]}",
             "title": str(risk)[:120],
             "type": "pitfall",
+            "type_zh": _TYPE_ZH.get("pitfall", "pitfall"),
             "priority": "P1",
             "domain": "engineering",
+            "domain_zh": _DOMAIN_ZH.get("engineering", "engineering"),
             "confidence": 0.6,
         })
 
     waivers = evidence.get("waivers", [])
     for waiver in waivers:
-        slug = re.sub(r"[^a-z0-9]+", "-", str(waiver)[:60].lower()).strip("-")
+        slug = re.sub(r"[^a-z0-9一-鿿]+", "-", str(waiver)[:60].lower()).strip("-")
         candidates.append({
             "id": f"waiver-{run_id}-{slug[:40]}",
             "title": str(waiver)[:120],
             "type": "case",
+            "type_zh": _TYPE_ZH.get("case", "case"),
             "priority": "P2",
             "domain": "operations",
+            "domain_zh": _DOMAIN_ZH.get("operations", "operations"),
             "confidence": 0.4,
         })
 
@@ -241,7 +254,7 @@ def knowledge_extract(
         ]
         for c in candidates:
             promotion_lines.append(
-                f"| {c['type']} | {c['title'][:60]} | {c['priority']} | {c['domain']} | {c['confidence']} |"
+                f"| {c.get('type_zh', c['type'])} | {c['title'][:60]} | {c['priority']} | {c.get('domain_zh', c['domain'])} | {c['confidence']} |"
             )
         promotion_lines += [
             "",
@@ -267,7 +280,7 @@ def knowledge_extract(
     table.add_column(_("knowledge.col_priority"), style="yellow")
     table.add_column(_("knowledge.col_domain"), style="dim")
     for c in candidates:
-        table.add_row(c["type"], c["title"][:60], c["priority"], c["domain"])
+        table.add_row(c.get("type_zh", c["type"]), c["title"][:60], c["priority"], c.get("domain_zh", c["domain"]))
 
     if candidates:
         console.print(table)
@@ -407,7 +420,8 @@ def knowledge_list(
     table.add_column(_("knowledge.col_domain"), style="dim")
     table.add_column(_("knowledge.col_source"), style="dim")
     for e in entries:
-        table.add_row(e.type, e.title[:60], e.priority.value, e.domain.value, e.source_run)
+        table.add_row(_TYPE_ZH.get(e.type, e.type), e.title[:60],
+                      e.priority.value, _DOMAIN_ZH.get(e.domain.value, e.domain.value), e.source_run)
     console.print(table)
 
 
@@ -432,7 +446,8 @@ def knowledge_search(
     table.add_column(_("knowledge.col_title"), style="bold")
     table.add_column(_("knowledge.col_domain"), style="dim")
     for e in results:
-        table.add_row(e.type, e.title[:60], e.domain.value)
+        table.add_row(_TYPE_ZH.get(e.type, e.type), e.title[:60],
+                      _DOMAIN_ZH.get(e.domain.value, e.domain.value))
     console.print(table)
 
 
