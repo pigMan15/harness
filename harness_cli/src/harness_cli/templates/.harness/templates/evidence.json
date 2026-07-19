@@ -1,0 +1,11 @@
+{
+  "run_id": "example",
+  "intent": "FEATURE",
+  "risk": "HIGH",
+  "changed_files": [],
+  "commands": [],
+  "gates": {},
+  "artifacts": [],
+  "waivers": [],
+  "residual_risks": []
+}
