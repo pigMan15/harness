@@ -50,7 +50,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='bridle-v0.1.0',
+    name='bridle',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

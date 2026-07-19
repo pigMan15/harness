@@ -169,23 +169,22 @@ cd harness_cli
 # 1. 安装构建依赖
 pip install pyinstaller
 
-# 2. 构建单文件 exe（带版本号）
+# 2. 构建单文件 exe
 python -m PyInstaller bridle.spec --clean --noconfirm
 
-# 3. 产物位置
-ls -lh dist/bridle-v0.1.0.exe   # ~15MB 单文件，无需 Python 环境
+# 3. 产物 (稳定文件名，方便加入 PATH)
+ls -lh dist/bridle.exe            # ~15MB 单文件，无需 Python 环境
 
-# 4. 测试
-dist/bridle-v0.1.0.exe --version
-dist/bridle-v0.1.0.exe status
+# 4. GitHub Release 时复制为版本化文件名
+copy dist\bridle.exe dist\bridle-v0.1.0.exe
 ```
 
 **设置到系统 PATH**：
 
 ```powershell
-# 复制到固定目录
+# 复制到固定目录（不用版本号，永久稳定）
 mkdir C:\Users\<user>\bridle
-copy dist\bridle-v0.1.0.exe C:\Users\<user>\bridle\
+copy dist\bridle.exe C:\Users\<user>\bridle\
 
 # 添加到用户 PATH（管理员 PowerShell）
 [Environment]::SetEnvironmentVariable(
@@ -195,9 +194,9 @@ copy dist\bridle-v0.1.0.exe C:\Users\<user>\bridle\
 )
 
 # 重启终端后即可全局使用
-bridle-v0.1.0 --version
-bridle-v0.1.0 status
-bridle-v0.1.0            # TUI 看板
+bridle --version
+bridle status
+bridle                    # TUI 看板
 ```
 
 ## 版本管理
