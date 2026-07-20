@@ -92,22 +92,74 @@ class Workflow:
 
     # ── 路由 ──
 
-    def route(self, intent: str, risk: str) -> list[str]:
+    def route(self, intent: str, risk: str, enforce_hard_rules: bool = True) -> list[str]:
         """根据意图和风险返回必需节点 ID 列表。
 
         Args:
             intent: 意图值，如 "FEATURE", "BUG_FIX"
             risk: 风险等级，如 "LOW", "MEDIUM", "HIGH"
+            enforce_hard_rules: 是否强制执行 hard_rules（默认开启）
 
         Returns:
             必需节点 ID 列表，按执行顺序排列。找不到匹配路由时返回空列表。
         """
         intent_routes = self.routes.get(intent, {})
-        # 尝试精确匹配 risk，否则尝试 NA 回退
         nodes = intent_routes.get(risk)
         if nodes is None:
             return []
-        return list(nodes)
+        result = list(nodes)
+        if enforce_hard_rules:
+            result = self._apply_hard_rules(intent, risk, result)
+        return result
+
+    # ── hard_rules 执行 ──
+
+    def _hard_rule_applies(self, rule_name: str, intent: str, risk: str) -> bool:
+        """判断某条 hard_rule 是否适用于给定的 intent + risk。"""
+        if rule_name == "code_changed_requires":
+            # 所有会改代码的意图（排除 QUERY 和纯查询场景）
+            return intent in ("BUG_FIX", "FEATURE", "REFACTOR")
+        if rule_name == "high_risk_or_deployment_requires":
+            return risk == "HIGH" or intent == "DEPLOYMENT"
+        if rule_name == "high_risk_requires":
+            return risk == "HIGH"
+        return False
+
+    def _apply_hard_rules(self, intent: str, risk: str, required: list[str]) -> list[str]:
+        """将适用的 hard_rules 节点插入 required 列表，保持 workflow 定义顺序。
+
+        不在 required 中已有的节点会被追加到末尾。
+        """
+        result = list(required)
+        existing = set(result)
+        all_nodes_ordered = list(self.nodes.keys())
+
+        for rule_name, rule_nodes in self.hard_rules.items():
+            if not self._hard_rule_applies(rule_name, intent, risk):
+                continue
+            for node_id in rule_nodes:
+                if node_id not in existing:
+                    result.append(node_id)
+                    existing.add(node_id)
+
+        # 按 workflow 中定义的节点顺序排序
+        order_map = {nid: idx for idx, nid in enumerate(all_nodes_ordered)}
+        result.sort(key=lambda nid: order_map.get(nid, 9999))
+        return result
+
+    def check_hard_rules(self, intent: str, risk: str, required: list[str]) -> list[str]:
+        """检查 required 列表是否满足 hard_rules，返回缺失节点的警告消息列表。"""
+        warnings: list[str] = []
+        existing = set(required)
+        for rule_name, rule_nodes in self.hard_rules.items():
+            if not self._hard_rule_applies(rule_name, intent, risk):
+                continue
+            missing = [n for n in rule_nodes if n not in existing]
+            if missing:
+                warnings.append(
+                    f"Hard rule '{rule_name}' requires missing nodes: {', '.join(missing)}"
+                )
+        return warnings
 
     def next_node(self, required: list[str], completed: set[str]) -> str | None:
         """返回第一个未完成的必需节点。

@@ -98,6 +98,7 @@ class Validator:
         errors.extend(self._check_workflow())
         errors.extend(self._check_phase_dir_safety())
         errors.extend(self._check_gate_definitions())
+        errors.extend(self._check_hard_rules())
         errors.extend(self._check_artifacts())
 
         # strict 模式下警告升级为错误
@@ -309,6 +310,38 @@ class Validator:
                     message=f"state.json references unknown gate: {gate_id}",
                     file=STATE_FILE,
                 ))
+
+        return issues
+
+    def _check_hard_rules(self) -> list[ValidationIssue]:
+        """检查 state.json 中的 required_nodes 是否满足 workflow hard_rules。"""
+        issues: list[ValidationIssue] = []
+        state_path = self.root / STATE_FILE
+        wf_path = self.root / WORKFLOW_FILE
+
+        if not state_path.exists() or not wf_path.exists():
+            return issues
+
+        try:
+            raw = json.loads(state_path.read_text(encoding="utf-8"))
+            workflow = Workflow.load(str(self.root))
+        except Exception:
+            return issues
+
+        intent = raw.get("intent", "")
+        risk = raw.get("risk", "")
+        required = raw.get("required_nodes", [])
+
+        if not intent or not risk or not required:
+            return issues
+
+        warnings = workflow.check_hard_rules(intent, risk, required)
+        for w in warnings:
+            issues.append(ValidationIssue(
+                level="warning",
+                message=w,
+                file=STATE_FILE,
+            ))
 
         return issues
 

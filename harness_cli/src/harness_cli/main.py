@@ -8,13 +8,10 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import typer
 
 from . import __version__
-from .ui.console import print_banner, print_version
+from .ui.console import print_version
 
 app = typer.Typer(
     name="bridle",

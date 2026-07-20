@@ -391,7 +391,7 @@ class SyncManager:
         if returncode != 0 and "fetch first" in (stderr + stdout):
             # 远程有更新，先拉取再推送
             self._run_git("fetch", "origin")
-            self._run_git("merge", "origin/main", "--allow-unrelated-histories")
+            self._run_git("merge", f"origin/{self.config.branch}", "--allow-unrelated-histories")
             returncode, stdout, stderr = self._run_git("push", "-u", "origin", self.config.branch)
         if returncode != 0:
             return False, stderr or stdout or "push failed"
