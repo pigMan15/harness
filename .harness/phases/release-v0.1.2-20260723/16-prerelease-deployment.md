@@ -1,0 +1,29 @@
+# 预发部署
+
+- 环境：本地 Windows 构建环境，目标为 GitHub Release `v0.1.2`
+- 版本或 commit：`v0.1.2`，提交与 tag 尚待创建
+- 配置：使用 `harness_cli/bridle.spec` 构建单文件 Windows CLI
+- 命令：
+  - `python -m pytest tests -q`
+  - `python -m compileall src tests -q`
+  - `python -m harness_cli.cli validate --json`
+  - `python -m harness_cli.cli --version`
+  - `python -m harness_cli.cli --lang zh init --force`，在临时空目录执行
+  - `python -m PyInstaller bridle.spec --clean --noconfirm`
+  - `Copy-Item harness_cli\dist\bridle.exe harness_cli\dist\bridle-v0.1.2.exe -Force`
+- 结果：
+  - 全量测试通过：`81 passed in 5.05s`
+  - 编译检查通过，无错误输出
+  - harness 结构校验通过：`passed=true`
+  - 源码版 CLI 版本输出为 `bridle v0.1.2`
+  - 源码版 `bridle init --force` 在临时空目录通过，未再出现 `UNKNOWN/UNKNOWN` route 错误
+  - PyInstaller 构建通过，生成 `harness_cli/dist/bridle.exe`
+  - 版本化发布资产已生成：`harness_cli/dist/bridle-v0.1.2.exe`，大小 15,143,297 bytes
+- 回滚：
+  - 推送前可追加修复提交或删除本地 tag。
+  - 已推送 tag 后，可删除远端 tag `v0.1.2` 并重新发布。
+  - 已创建 Release 后，可删除 Release 或发布修复版本 `v0.1.3`。
+- 冒烟/接口测试：
+  - 详见 `17-interface-test.md`
+- 证据链接或日志：
+  - 最终发布证据将在 `15-evidence.json` 中汇总
