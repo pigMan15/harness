@@ -1,0 +1,79 @@
+{
+  "run_id": "fix-init-unknown-route-001",
+  "intent": "BUG_FIX",
+  "risk": "LOW",
+  "changed_files": [
+    ".harness/phases/fix-init-unknown-route-001/00-intake.md",
+    ".harness/phases/fix-init-unknown-route-001/11-development.md",
+    ".harness/phases/fix-init-unknown-route-001/12-compile.md",
+    ".harness/phases/fix-init-unknown-route-001/13-unit-test.md",
+    ".harness/phases/fix-init-unknown-route-001/15-evidence.json",
+    ".harness/phases/fix-init-unknown-route-001/18-acceptance-report.md",
+    ".harness/phases/fix-init-unknown-route-001/19-knowledge-promotion.md",
+    ".harness/runs/fix-init-unknown-route-001/state.json",
+    ".harness/state.json",
+    "harness_cli/src/harness_cli/core/validate.py",
+    "harness_cli/tests/test_validate.py"
+  ],
+  "commands": [
+    {
+      "name": "聚焦校验测试",
+      "command": "python -m pytest tests/test_validate.py -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "测试通过，输出 9 passed, 1 warning in 0.83s"
+    },
+    {
+      "name": "全量单元测试",
+      "command": "python -m pytest tests -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "测试通过，输出 81 passed, 1 warning in 4.97s"
+    },
+    {
+      "name": "编译检查",
+      "command": "python -m compileall src tests -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "编译检查通过，无错误输出"
+    },
+    {
+      "name": "真实初始化冒烟测试",
+      "command": "python -m harness_cli.cli --lang zh init --force; python -m harness_cli.cli --lang zh validate --json",
+      "cwd": "C:\\Users\\15330\\AppData\\Local\\Temp\\bridle-init-smoke-5c429781e11049e69522797b026daa2f",
+      "exit_code": 0,
+      "result": "初始化创建 87 个模板文件，最终校验通过，输出 JSON 中 passed=true"
+    },
+    {
+      "name": "仓库 harness 校验",
+      "command": "python -m harness_cli.cli validate --json",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "校验通过，输出 JSON 中 passed=true"
+    }
+  ],
+  "gates": {
+    "G1_REQUIREMENTS": "NOT_REQUIRED",
+    "G2_DESIGN": "NOT_REQUIRED",
+    "G3_COMPILE": "PASS",
+    "G4_UNIT_TEST": "PASS",
+    "G5_ATDD": "NOT_REQUIRED",
+    "G6_EVIDENCE": "PASS",
+    "G7_PRERELEASE": "NOT_REQUIRED",
+    "G8_ACCEPTANCE": "PASS"
+  },
+  "artifacts": [
+    ".harness/phases/fix-init-unknown-route-001/00-intake.md",
+    ".harness/phases/fix-init-unknown-route-001/11-development.md",
+    ".harness/phases/fix-init-unknown-route-001/12-compile.md",
+    ".harness/phases/fix-init-unknown-route-001/13-unit-test.md",
+    ".harness/phases/fix-init-unknown-route-001/15-evidence.json",
+    ".harness/phases/fix-init-unknown-route-001/18-acceptance-report.md",
+    ".harness/phases/fix-init-unknown-route-001/19-knowledge-promotion.md"
+  ],
+  "waivers": [],
+  "residual_risks": [
+    "尚未重新打包 exe，因此用户当前已下载的 v0.1.1 二进制仍包含该问题；需要重新打包并发布补丁版后才会影响外部下载产物。",
+    "系统 Temp 下的两次临时冒烟目录清理命令被策略拦截，目录不在仓库中，不影响提交内容。"
+  ]
+}

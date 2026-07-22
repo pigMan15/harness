@@ -51,6 +51,39 @@ class TestValidator:
         assert not report.passed
         assert any("required_nodes does not match workflow route" in e.message for e in report.errors)
 
+    def test_initial_unknown_state_without_route_is_valid(self, valid_harness: Path) -> None:
+        state_path = valid_harness / ".harness/state.json"
+        raw = json.loads(state_path.read_text(encoding="utf-8"))
+        raw.update({
+            "run_id": "local-initial",
+            "status": "IDLE",
+            "intent": "UNKNOWN",
+            "risk": "UNKNOWN",
+            "current_node": "",
+            "required_nodes": [],
+            "completed_nodes": [],
+            "phase_dir": ".harness/phases/local-initial",
+        })
+        (valid_harness / ".harness/phases/local-initial").mkdir(parents=True, exist_ok=True)
+        state_path.write_text(json.dumps(raw), encoding="utf-8")
+
+        report = Validator(str(valid_harness)).validate()
+
+        assert report.passed
+
+    def test_non_initial_missing_workflow_route_is_invalid(self, valid_harness: Path) -> None:
+        state_path = valid_harness / ".harness/state.json"
+        raw = json.loads(state_path.read_text(encoding="utf-8"))
+        raw["intent"] = "UNKNOWN"
+        raw["risk"] = "LOW"
+        raw["required_nodes"] = []
+        state_path.write_text(json.dumps(raw), encoding="utf-8")
+
+        report = Validator(str(valid_harness)).validate()
+
+        assert not report.passed
+        assert any("No workflow route for UNKNOWN/LOW" in e.message for e in report.errors)
+
     def test_pyproject_includes_runtime_package_data(self) -> None:
         pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text(encoding="utf-8"))

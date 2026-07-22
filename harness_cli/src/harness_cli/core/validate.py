@@ -155,6 +155,11 @@ class Validator:
         expected_nodes = workflow.route(intent, risk)
         actual_nodes = list(raw_state.get("required_nodes", []))
 
+        # Freshly initialized projects have no active run yet. The template keeps
+        # UNKNOWN/UNKNOWN as an explicit idle placeholder until `bridle new`.
+        if intent == "UNKNOWN" and risk == "UNKNOWN" and not actual_nodes:
+            return issues
+
         # Active state must stay aligned with the current workflow route.
         if expected_nodes and actual_nodes != expected_nodes:
             issues.append(ValidationIssue(
