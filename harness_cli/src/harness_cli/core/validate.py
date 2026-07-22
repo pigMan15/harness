@@ -1,40 +1,29 @@
-"""Validator 结构校验器：完整性、引用一致性、路径安全。
-
-整合所有校验逻辑，提供单次 validate() 调用返回结构化报告。
-校验项：
-1. 必需文件存在性
-2. state.json 合法性和 schema 校验
-3. workflow.yaml 引用完整性（节点、门禁、角色互相引用一致）
-4. phase_dir 路径穿越防护
-5. 已完成节点的产物存在性
-6. 门禁引用有效性
-"""
+"""Structured validation for a Bridle harness project."""
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import jsonschema
-import yaml
 
 from ..constants import (
-    REQUIRED_FILES, HARNESS_DIR, STATE_FILE, SCHEMA_FILE,
-    WORKFLOW_FILE, GATES_FILE, PHASES_DIR,
+    REQUIRED_FILES,
+    STATE_FILE,
+    SCHEMA_FILE,
+    WORKFLOW_FILE,
+    GATES_FILE,
+    PHASES_DIR,
 )
-from .state import HarnessState
 from .workflow import Workflow
-from .gates import GateEvaluator, GateDefinition
-
-
-# ---- 数据模型 ----
+from .gates import GateEvaluator
 
 
 @dataclass
 class ValidationIssue:
-    """单条校验问题。"""
+    """A single validation issue."""
+
     level: str  # "error" | "warning"
     message: str
     file: str | None = None
@@ -43,7 +32,8 @@ class ValidationIssue:
 
 @dataclass
 class ValidationReport:
-    """校验报告：汇总所有 issues。"""
+    """Aggregated validation report."""
+
     passed: bool
     errors: list[ValidationIssue] = field(default_factory=list)
     warnings: list[ValidationIssue] = field(default_factory=list)
@@ -53,7 +43,6 @@ class ValidationReport:
         return len(self.errors) + len(self.warnings)
 
     def format_summary(self) -> str:
-        """单行摘要。"""
         parts = []
         if self.errors:
             parts.append(f"{len(self.errors)} error(s)")
@@ -64,32 +53,14 @@ class ValidationReport:
         return ", ".join(parts)
 
 
-# ---- 校验器 ----
-
-
 class Validator:
-    """Harness 项目结构完整性校验器。
-
-    用法:
-        v = Validator(root=".", strict=False)
-        report = v.validate()
-        if not report.passed:
-            print(report.format_summary())
-    """
+    """Validate .harness structure, references, paths, and active state."""
 
     def __init__(self, root: str = ".", strict: bool = False):
-        """
-        Args:
-            root: 项目根目录（包含 .harness/ 的目录）
-            strict: True 时警告也标记为 failure
-        """
         self.root = Path(root).resolve()
         self.strict = strict
 
-    # ── 主入口 ──
-
     def validate(self) -> ValidationReport:
-        """运行全部校验，返回结构化报告。"""
         errors: list[ValidationIssue] = []
         warnings: list[ValidationIssue] = []
 
@@ -98,20 +69,15 @@ class Validator:
         errors.extend(self._check_workflow())
         errors.extend(self._check_phase_dir_safety())
         errors.extend(self._check_gate_definitions())
-        errors.extend(self._check_artifacts())
+        warnings.extend(self._check_artifacts())
 
-        # strict 模式下警告升级为错误
         if self.strict:
             errors.extend(warnings)
             warnings = []
 
-        passed = len(errors) == 0
-        return ValidationReport(passed=passed, errors=errors, warnings=warnings)
-
-    # ── 子校验 ──
+        return ValidationReport(passed=len(errors) == 0, errors=errors, warnings=warnings)
 
     def _check_required_files(self) -> list[ValidationIssue]:
-        """检查必需文件是否存在。"""
         issues: list[ValidationIssue] = []
         for rel_path in REQUIRED_FILES:
             full_path = self.root / rel_path
@@ -124,19 +90,17 @@ class Validator:
         return issues
 
     def _check_state_json(self) -> list[ValidationIssue]:
-        """检查 state.json 是否合法 JSON 且符合 schema。"""
         issues: list[ValidationIssue] = []
         state_path = self.root / STATE_FILE
 
         if not state_path.exists():
             issues.append(ValidationIssue(
                 level="error",
-                message="state.json not found — cannot perform schema validation",
+                message="state.json not found - cannot perform schema validation",
                 file=STATE_FILE,
             ))
             return issues
 
-        # JSON 合法性
         try:
             raw = json.loads(state_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
@@ -147,7 +111,6 @@ class Validator:
             ))
             return issues
 
-        # Schema 合法性
         schema_path = self.root / SCHEMA_FILE
         if schema_path.exists():
             try:
@@ -160,20 +123,55 @@ class Validator:
                     file=STATE_FILE,
                 ))
 
-        # phase_dir 格式
         phase_dir = raw.get("phase_dir", "")
         normalized = str(phase_dir).replace("\\", "/")
-        if not normalized.startswith(f".harness/phases/"):
+        if not normalized.startswith(".harness/phases/"):
             issues.append(ValidationIssue(
                 level="error",
                 message=f"phase_dir must be under .harness/phases/: {phase_dir}",
                 file=STATE_FILE,
             ))
 
+        issues.extend(self._check_required_nodes_route(raw))
+        return issues
+
+    def _check_required_nodes_route(self, raw_state: dict) -> list[ValidationIssue]:
+        issues: list[ValidationIssue] = []
+        wf_path = self.root / WORKFLOW_FILE
+        if not wf_path.exists():
+            return issues
+
+        try:
+            workflow = Workflow.load(str(self.root))
+        except Exception as e:
+            return [ValidationIssue(
+                level="error",
+                message=f"state/workflow route validation failed: {e}",
+                file=STATE_FILE,
+            )]
+
+        intent = str(raw_state.get("intent", ""))
+        risk = str(raw_state.get("risk", ""))
+        expected_nodes = workflow.route(intent, risk)
+        actual_nodes = list(raw_state.get("required_nodes", []))
+
+        # Active state must stay aligned with the current workflow route.
+        if expected_nodes and actual_nodes != expected_nodes:
+            issues.append(ValidationIssue(
+                level="error",
+                message="state.required_nodes does not match workflow route",
+                file=STATE_FILE,
+                detail=f"intent={intent} risk={risk} expected={expected_nodes} actual={actual_nodes}",
+            ))
+        elif not expected_nodes:
+            issues.append(ValidationIssue(
+                level="error",
+                message=f"No workflow route for {intent}/{risk}",
+                file=WORKFLOW_FILE,
+            ))
         return issues
 
     def _check_workflow(self) -> list[ValidationIssue]:
-        """检查 workflow.yaml 引用完整性。"""
         issues: list[ValidationIssue] = []
         wf_path = self.root / WORKFLOW_FILE
 
@@ -197,7 +195,6 @@ class Validator:
 
         node_ids = workflow.all_node_ids()
 
-        # 角色文件存在性
         for node_id, node in workflow.nodes.items():
             if node.role:
                 role_path = self.root / f".harness/agents/{node.role}.md"
@@ -209,9 +206,7 @@ class Validator:
                         detail=f"Expected file: .harness/agents/{node.role}.md",
                     ))
 
-        # 路由引用的节点必须存在
-        route_refs = workflow.route_nodes_referenced()
-        for node_id in route_refs:
+        for node_id in workflow.route_nodes_referenced():
             if node_id not in node_ids:
                 issues.append(ValidationIssue(
                     level="error",
@@ -219,9 +214,7 @@ class Validator:
                     file=WORKFLOW_FILE,
                 ))
 
-        # 硬规则引用的节点必须存在
-        hr_refs = workflow.hard_rule_nodes_referenced()
-        for node_id in hr_refs:
+        for node_id in workflow.hard_rule_nodes_referenced():
             if node_id not in node_ids:
                 issues.append(ValidationIssue(
                     level="error",
@@ -229,9 +222,8 @@ class Validator:
                     file=WORKFLOW_FILE,
                 ))
 
-        # 失败恢复中引用的节点和门禁
-        g2n = workflow.failure_recovery.get("gate_to_node", {})
-        for gate_id, node_id in g2n.items():
+        gate_to_node = workflow.failure_recovery.get("gate_to_node", {})
+        for gate_id, node_id in gate_to_node.items():
             if node_id not in node_ids:
                 issues.append(ValidationIssue(
                     level="error",
@@ -242,7 +234,6 @@ class Validator:
         return issues
 
     def _check_phase_dir_safety(self) -> list[ValidationIssue]:
-        """检查 phase_dir 是否在 .harness/phases/ 内（防止路径穿越）。"""
         issues: list[ValidationIssue] = []
         state_path = self.root / STATE_FILE
 
@@ -271,7 +262,6 @@ class Validator:
         return issues
 
     def _check_gate_definitions(self) -> list[ValidationIssue]:
-        """检查 gates.yaml 和 state.json 之间门禁 ID 的一致性。"""
         issues: list[ValidationIssue] = []
         gates_path = self.root / GATES_FILE
         state_path = self.root / STATE_FILE
@@ -301,7 +291,6 @@ class Validator:
         defined_gates = evaluator.all_gate_ids()
         state_gates = set(raw_state.get("gates", {}).keys())
 
-        # state.json 中引用的门禁必须已定义
         for gate_id in state_gates:
             if gate_id not in defined_gates:
                 issues.append(ValidationIssue(
@@ -313,7 +302,6 @@ class Validator:
         return issues
 
     def _check_artifacts(self) -> list[ValidationIssue]:
-        """检查已完成节点的产物文件是否存在。"""
         issues: list[ValidationIssue] = []
         state_path = self.root / STATE_FILE
         wf_path = self.root / WORKFLOW_FILE

@@ -31,9 +31,10 @@ def valid_harness(temp_project: Path) -> Path:
         harness_dir.mkdir(parents=True)
 
     # 确保核心文件存在
-    _ensure_file(harness_dir / "state.schema.json", _STATE_SCHEMA)
-    _ensure_file(harness_dir / "workflow.yaml", _MINIMAL_WORKFLOW)
-    _ensure_file(harness_dir / "evals/gates.yaml", _MINIMAL_GATES)
+    (harness_dir / "state.schema.json").write_text(_STATE_SCHEMA, encoding="utf-8")
+    (harness_dir / "workflow.yaml").write_text(_MINIMAL_WORKFLOW, encoding="utf-8")
+    (harness_dir / "evals/gates.yaml").parent.mkdir(parents=True, exist_ok=True)
+    (harness_dir / "evals/gates.yaml").write_text(_MINIMAL_GATES, encoding="utf-8")
 
     # 写一个干净的 state.json
     state = {
@@ -173,14 +174,24 @@ gate_meanings:
 _MINIMAL_GATES = """
 schema_version: "1.0"
 gates:
+  G1_REQUIREMENTS:
+    description: "requirements are clear"
+  G2_DESIGN:
+    description: "design exists"
   G3_COMPILE:
     description: "code compiles"
     required_artifacts:
       - "12-compile.md"
+  G4_UNIT_TEST:
+    description: "unit tests pass"
+  G5_ATDD:
+    description: "scenario tests pass"
   G6_EVIDENCE:
     description: "evidence recorded"
     required_artifacts:
       - "15-evidence.json"
+  G7_PRERELEASE:
+    description: "prerelease checks pass"
   G8_ACCEPTANCE:
     description: "report exists"
     required_artifacts:

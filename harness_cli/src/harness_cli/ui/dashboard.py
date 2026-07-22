@@ -22,7 +22,19 @@ from ..constants import THEME
 from .widgets.project_list import ProjectList
 from .widgets.workflow_tree import WorkflowPanel
 from .widgets.gates_grid import GatesGrid
-from .widgets.new_run_modal import NewRunModal
+from .widgets.new_run_modal import NewRunModal, NewRunRequest
+
+
+def create_state_for_new_run(project_path: Path, workflow: Workflow | None, request: NewRunRequest) -> HarnessState:
+    """按用户在 TUI 中选择的 intent/risk 创建状态，避免覆盖用户意图。"""
+    from ..core.state import Intent, Risk
+
+    intent = Intent(request.intent)
+    risk = Risk(request.risk)
+    state = HarnessState.create_new(request.run_id, intent, risk, root=str(project_path))
+    if workflow:
+        state.required_nodes = workflow.route(intent.value, risk.value)
+    return state
 
 
 class HarnessApp(App):
@@ -211,18 +223,15 @@ class HarnessApp(App):
 
         project_path = self._active_project
 
-        def _on_done(run_id: str | None) -> None:
-            if run_id is None:
+        def _on_done(request: NewRunRequest | None) -> None:
+            if request is None:
                 return
             try:
-                from ..core.state import HarnessState, Intent, Risk
-                state = HarnessState.create_new(run_id, Intent.FEATURE, Risk.MEDIUM, root=str(project_path))
-                if self._workflow:
-                    state.required_nodes = self._workflow.route("FEATURE", "MEDIUM")
+                state = create_state_for_new_run(project_path, self._workflow, request)
                 state.save(str(project_path))
                 state.save_snapshot(str(project_path))
                 self.load_project(project_path)
-                self.notify(f"Created run: {run_id}", severity="information")
+                self.notify(f"Created run: {request.run_id}", severity="information")
             except Exception as e:
                 self.notify(f"Failed: {e}", severity="error")
 

@@ -1,0 +1,96 @@
+{
+  "run_id": "improve-quality-001",
+  "intent": "FEATURE",
+  "risk": "MEDIUM",
+  "changed_files": [
+    "harness_cli/pyproject.toml",
+    "harness_cli/src/harness_cli/core/validate.py",
+    "harness_cli/src/harness_cli/ui/dashboard.py",
+    "harness_cli/src/harness_cli/ui/widgets/new_run_modal.py",
+    "harness_cli/tests/conftest.py",
+    "harness_cli/tests/test_validate.py",
+    "harness_cli/tests/test_tui_new_run.py"
+  ],
+  "commands": [
+    {
+      "name": "编译静态检查",
+      "command": "C:\\Users\\15330\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe -m py_compile harness_cli\\src\\harness_cli\\core\\validate.py harness_cli\\src\\harness_cli\\ui\\widgets\\new_run_modal.py harness_cli\\src\\harness_cli\\ui\\dashboard.py harness_cli\\tests\\test_validate.py harness_cli\\tests\\test_tui_new_run.py",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "编译静态检查通过，退出码 0"
+    },
+    {
+      "name": "首次聚焦测试",
+      "command": "python -m pytest tests\\test_validate.py tests\\test_tui_new_run.py -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 1,
+      "result": "首次运行失败，原因是当前 Python 环境缺少 pytest"
+    },
+    {
+      "name": "安装开发依赖",
+      "command": "python -m pip install -e .[dev]",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "开发依赖安装成功"
+    },
+    {
+      "name": "聚焦单元测试",
+      "command": "python -m pytest tests\\test_validate.py tests\\test_tui_new_run.py -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "聚焦测试通过，8 passed in 0.97s"
+    },
+    {
+      "name": "全量单元测试",
+      "command": "python -m pytest tests -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "全量测试通过，79 passed in 4.67s"
+    },
+    {
+      "name": "Harness 结构校验",
+      "command": "python -m harness_cli.cli validate --json",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "Harness 结构校验通过，passed=true，无错误和警告"
+    }
+  ],
+  "gates": {
+    "G1_REQUIREMENTS": "PASS",
+    "G2_DESIGN": "PASS",
+    "G3_COMPILE": "PASS",
+    "G4_UNIT_TEST": "PASS",
+    "G5_ATDD": "NOT_REQUIRED",
+    "G6_EVIDENCE": "PASS",
+    "G7_PRERELEASE": "NOT_REQUIRED",
+    "G8_ACCEPTANCE": "PASS"
+  },
+  "artifacts": [
+    "00-intake.md",
+    "00-context-pack.md",
+    "01-requirement-review.md",
+    "03-solution-design.md",
+    "06-implementation-plan.md",
+    "07-acceptance-confirmation.md",
+    "11-development.md",
+    "12-compile.md",
+    "13-unit-test.md",
+    "15-evidence.json",
+    "18-acceptance-report.md",
+    "19-knowledge-promotion.md"
+  ],
+  "waivers": [
+    {
+      "scope": "G5_ATDD",
+      "reason": "当前 FEATURE/MEDIUM 路由不要求 ATDD，变更已由聚焦测试和全量单元测试覆盖"
+    },
+    {
+      "scope": "G7_PRERELEASE",
+      "reason": "当前 FEATURE/MEDIUM 路由不要求预发布部署"
+    }
+  ],
+  "residual_risks": [
+    "完整 wheel/sdist 构建烟测未单独执行，本次通过 pyproject 静态断言覆盖 package-data 配置。",
+    "TUI 行为使用 helper 级单元测试覆盖，未启动完整 Textual 交互会话。"
+  ]
+}
