@@ -1,24 +1,34 @@
 # 预发部署
 
 - 环境：本地 Windows 构建环境，目标为 GitHub Release `v0.1.1`
-- 版本或 commit：`v0.1.1`，提交尚待创建
+- 版本或 commit：`1e88aea926ac2d0802afdcc86b3964eeb05ca881`，tag `v0.1.1`
 - 配置：使用 `harness_cli/bridle.spec` 构建单文件 Windows CLI
 - 命令：
   - `python -m pytest tests -q`
   - `python -m harness_cli.cli validate --json`
   - `python -m PyInstaller bridle.spec --clean --noconfirm`
   - `Copy-Item harness_cli\dist\bridle.exe harness_cli\dist\bridle-v0.1.1.exe`
+  - `git push origin main`
+  - `git push origin v0.1.1`
+  - GitHub REST API 创建 Release `v0.1.1`
+  - GitHub REST API 上传资产 `bridle-v0.1.1.exe`
 - 结果：
   - 全量测试通过：`79 passed in 5.92s`
   - harness 结构校验通过：`passed=true`
   - PyInstaller 构建通过，生成 `harness_cli/dist/bridle.exe`
   - 版本化发布资产已生成：`harness_cli/dist/bridle-v0.1.1.exe`，大小 33,552,543 bytes
+  - `main` 已推送到 `https://github.com/pigMan15/harness.git`
+  - tag `v0.1.1` 已推送到远端
+  - GitHub Release 已创建：https://github.com/pigMan15/harness/releases/tag/v0.1.1
+  - Release 资产已上传：https://github.com/pigMan15/harness/releases/download/v0.1.1/bridle-v0.1.1.exe
 - 回滚：
-  - 未推送前可删除本地 tag/commit 或追加修复提交。
-  - 已推送 tag 但未发布时删除远端 tag `v0.1.1`。
-  - 已创建 Release 后删除 Release 或发布修复版 `v0.1.2`。
+  - 发布前可追加修复提交或删除本地 tag。
+  - 已推送 tag 后，可删除远端 tag `v0.1.1` 并重新发布修复版本。
+  - 已创建 Release 后，可删除 Release 或发布修复版本 `v0.1.2`。
 - 冒烟/接口测试：
   - `bridle-v0.1.1.exe --version` 通过，输出 `bridle v0.1.1`
   - `bridle-v0.1.1.exe validate --json` 通过，输出 `passed=true`
   - `bridle-v0.1.1.exe status --json` 通过，可读取当前 release run
-- 证据链接或日志：详见本 run 后续 `17-interface-test.md` 与 `15-evidence.json`
+- 证据链接或日志：
+  - 接口测试详见 `17-interface-test.md`
+  - 发布证据详见 `15-evidence.json`
