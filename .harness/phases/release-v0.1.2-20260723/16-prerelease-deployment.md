@@ -11,6 +11,10 @@
   - `python -m harness_cli.cli --lang zh init --force`，在临时空目录执行
   - `python -m PyInstaller bridle.spec --clean --noconfirm`
   - `Copy-Item harness_cli\dist\bridle.exe harness_cli\dist\bridle-v0.1.2.exe -Force`
+  - `git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push origin main`
+  - `git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push origin v0.1.2`
+  - GitHub REST API 创建 Release `v0.1.2`
+  - GitHub REST API 上传资产 `bridle-v0.1.2.exe`
 - 结果：
   - 全量测试通过：`81 passed in 5.05s`
   - 编译检查通过，无错误输出
@@ -19,6 +23,10 @@
   - 源码版 `bridle init --force` 在临时空目录通过，未再出现 `UNKNOWN/UNKNOWN` route 错误
   - PyInstaller 构建通过，生成 `harness_cli/dist/bridle.exe`
   - 版本化发布资产已生成：`harness_cli/dist/bridle-v0.1.2.exe`，大小 15,143,297 bytes
+  - `main` 已推送到 `https://github.com/pigMan15/harness.git`
+  - tag `v0.1.2` 已推送到远端
+  - GitHub Release 已创建：https://github.com/pigMan15/harness/releases/tag/v0.1.2
+  - Release 资产已上传：https://github.com/pigMan15/harness/releases/download/v0.1.2/bridle-v0.1.2.exe
 - 回滚：
   - 推送前可追加修复提交或删除本地 tag。
   - 已推送 tag 后，可删除远端 tag `v0.1.2` 并重新发布。
@@ -26,4 +34,4 @@
 - 冒烟/接口测试：
   - 详见 `17-interface-test.md`
 - 证据链接或日志：
-  - 最终发布证据将在 `15-evidence.json` 中汇总
+  - 发布证据详见 `15-evidence.json`

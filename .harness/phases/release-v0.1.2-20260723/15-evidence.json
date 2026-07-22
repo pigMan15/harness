@@ -1,0 +1,172 @@
+{
+  "run_id": "release-v0.1.2-20260723",
+  "intent": "DEPLOYMENT",
+  "risk": "MEDIUM",
+  "changed_files": [
+    ".harness/phases/fix-init-unknown-route-001/00-intake.md",
+    ".harness/phases/fix-init-unknown-route-001/11-development.md",
+    ".harness/phases/fix-init-unknown-route-001/12-compile.md",
+    ".harness/phases/fix-init-unknown-route-001/13-unit-test.md",
+    ".harness/phases/fix-init-unknown-route-001/15-evidence.json",
+    ".harness/phases/fix-init-unknown-route-001/18-acceptance-report.md",
+    ".harness/phases/fix-init-unknown-route-001/19-knowledge-promotion.md",
+    ".harness/runs/fix-init-unknown-route-001/state.json",
+    ".harness/state.json",
+    ".harness/phases/release-v0.1.2-20260723/00-intake.md",
+    ".harness/phases/release-v0.1.2-20260723/05-pre-mortem.md",
+    ".harness/phases/release-v0.1.2-20260723/16-prerelease-deployment.md",
+    ".harness/phases/release-v0.1.2-20260723/17-interface-test.md",
+    ".harness/runs/release-v0.1.2-20260723/state.json",
+    "harness_cli/pyproject.toml",
+    "harness_cli/src/harness_cli/__init__.py",
+    "harness_cli/src/harness_cli/core/validate.py",
+    "harness_cli/tests/test_validate.py"
+  ],
+  "commands": [
+    {
+      "name": "全量单元测试",
+      "command": "python -m pytest tests -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "测试通过，输出 81 passed, 1 warning in 5.05s"
+    },
+    {
+      "name": "编译检查",
+      "command": "python -m compileall src tests -q",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "编译检查通过，无错误输出"
+    },
+    {
+      "name": "harness 结构校验",
+      "command": "python -m harness_cli.cli validate --json",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "校验通过，输出 JSON 中 passed=true"
+    },
+    {
+      "name": "源码版初始化冒烟测试",
+      "command": "python -m harness_cli.cli --lang zh init --force; python -m harness_cli.cli --lang zh validate --json",
+      "cwd": "C:\\Users\\15330\\AppData\\Local\\Temp\\bridle-src-init-smoke-267b79d6827a4cfba5236f793911fab8",
+      "exit_code": 0,
+      "result": "初始化创建 87 个模板文件，最终校验通过，未出现 UNKNOWN/UNKNOWN route 错误"
+    },
+    {
+      "name": "源码版版本检查",
+      "command": "python -m harness_cli.cli --version",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "输出 bridle v0.1.2"
+    },
+    {
+      "name": "Windows CLI 打包",
+      "command": "python -m PyInstaller bridle.spec --clean --noconfirm",
+      "cwd": "G:\\Project\\ai\\harness\\harness_cli",
+      "exit_code": 0,
+      "result": "打包成功，生成 harness_cli/dist/bridle.exe"
+    },
+    {
+      "name": "生成版本化发布资产",
+      "command": "Copy-Item harness_cli\\dist\\bridle.exe harness_cli\\dist\\bridle-v0.1.2.exe -Force",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "资产生成成功，大小 15,143,297 bytes"
+    },
+    {
+      "name": "二进制版本冒烟测试",
+      "command": ".\\harness_cli\\dist\\bridle-v0.1.2.exe --version",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "输出 bridle v0.1.2"
+    },
+    {
+      "name": "二进制校验冒烟测试",
+      "command": ".\\harness_cli\\dist\\bridle-v0.1.2.exe validate --json",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "校验通过，输出 JSON 中 passed=true"
+    },
+    {
+      "name": "二进制状态冒烟测试",
+      "command": ".\\harness_cli\\dist\\bridle-v0.1.2.exe status --json",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "能够读取当前 release run"
+    },
+    {
+      "name": "二进制初始化冒烟测试",
+      "command": "G:\\Project\\ai\\harness\\harness_cli\\dist\\bridle-v0.1.2.exe --lang zh init --force; G:\\Project\\ai\\harness\\harness_cli\\dist\\bridle-v0.1.2.exe --lang zh validate --json",
+      "cwd": "C:\\Users\\15330\\AppData\\Local\\Temp\\bridle-bin-init-smoke-fbefa52e013c47878e1bf97b9d6cc3ed",
+      "exit_code": 0,
+      "result": "初始化创建 87 个模板文件，最终校验通过，未出现 UNKNOWN/UNKNOWN route 错误"
+    },
+    {
+      "name": "提交初始化修复",
+      "command": "git commit -m \"fix: allow initial unknown harness state validation\"",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "提交成功：a17233b"
+    },
+    {
+      "name": "提交发布版本",
+      "command": "git commit -m \"chore: release bridle v0.1.2\"",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "提交成功：0a465d9"
+    },
+    {
+      "name": "推送 main 分支",
+      "command": "git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push origin main",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "推送成功，main 从 f122520 更新到 0a465d9"
+    },
+    {
+      "name": "推送发布 tag",
+      "command": "git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push origin v0.1.2",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "推送成功，远端新增 tag v0.1.2"
+    },
+    {
+      "name": "创建 GitHub Release",
+      "command": "GitHub REST API POST /repos/pigMan15/harness/releases",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "Release 创建成功：https://github.com/pigMan15/harness/releases/tag/v0.1.2"
+    },
+    {
+      "name": "上传 GitHub Release 资产",
+      "command": "GitHub REST API uploads.github.com release asset upload",
+      "cwd": "G:\\Project\\ai\\harness",
+      "exit_code": 0,
+      "result": "资产上传成功：https://github.com/pigMan15/harness/releases/download/v0.1.2/bridle-v0.1.2.exe"
+    }
+  ],
+  "gates": {
+    "G1_REQUIREMENTS": "NOT_REQUIRED",
+    "G2_DESIGN": "PASS",
+    "G3_COMPILE": "NOT_REQUIRED",
+    "G4_UNIT_TEST": "NOT_REQUIRED",
+    "G5_ATDD": "NOT_REQUIRED",
+    "G6_EVIDENCE": "PASS",
+    "G7_PRERELEASE": "PASS",
+    "G8_ACCEPTANCE": "PASS"
+  },
+  "artifacts": [
+    ".harness/phases/release-v0.1.2-20260723/00-intake.md",
+    ".harness/phases/release-v0.1.2-20260723/05-pre-mortem.md",
+    ".harness/phases/release-v0.1.2-20260723/16-prerelease-deployment.md",
+    ".harness/phases/release-v0.1.2-20260723/17-interface-test.md",
+    ".harness/phases/release-v0.1.2-20260723/15-evidence.json",
+    ".harness/phases/release-v0.1.2-20260723/18-acceptance-report.md",
+    ".harness/phases/release-v0.1.2-20260723/19-knowledge-promotion.md",
+    "harness_cli/dist/bridle-v0.1.2.exe"
+  ],
+  "waivers": [],
+  "residual_risks": [
+    "Release 资产已上传，但未在另一台干净 Windows 主机重新下载执行。",
+    "本机 Git 直连 GitHub 失败，使用 Windows 用户代理 127.0.0.1:7897 作为临时推送代理；未写入全局 Git 配置。",
+    "发布过程中曾通过 GitHub API 试创建未引用的 commit object，但未更新远端 ref，实际 main 和 tag 由 git push 成功发布。"
+  ]
+}
